@@ -1,8 +1,23 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { Lead } from "@/lib/supabase/types";
 
 export type SubmitLeadState = { error?: string; success?: boolean } | undefined;
+
+export async function updateLeadStage(leadId: string, stage: Lead["stage"]) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+
+  const { error } = await supabase.from("leads").update({ stage }).eq("id", leadId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/contacts");
+}
 
 export async function submitReciprocalLead(
   profileId: string,

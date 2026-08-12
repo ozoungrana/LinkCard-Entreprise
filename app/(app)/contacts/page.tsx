@@ -2,8 +2,7 @@ import Link from "next/link";
 import { Download, Lock, ScanLine, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ContactsTable } from "@/components/features/contacts-table";
+import { ContactsView } from "@/components/features/contacts-view";
 import { getCurrentOrganization, getMyLeads, type LeadWithNotes } from "@/lib/supabase/queries";
 
 // Chapter 10 §2/§4 — Free is capped at 5 captured contacts/month. The
@@ -40,11 +39,7 @@ export default async function ContactsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs defaultValue="all">
-          <TabsList>
-            <TabsTrigger value="all">Tous les contacts ({leads.length})</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <h2 className="text-lg font-semibold font-display">Contacts ({leads.length})</h2>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" disabled>
             <Upload />
@@ -76,7 +71,7 @@ export default async function ContactsPage() {
         </div>
       )}
 
-      <ContactsTable leads={leads} />
+      <ContactsView leads={leads} />
     </div>
   );
 }
