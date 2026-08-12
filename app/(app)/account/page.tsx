@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ManageBillingButton, UpgradePlanDialog } from "@/components/features/billing-actions";
 import {
   getCurrentOrganization,
   getMyLeads,
@@ -43,12 +44,6 @@ const offlineChecklist = [
   { label: "Écriture et lecture de la puce NFC", enabled: true },
   { label: "Enregistrement local des nouveaux contacts scannés", enabled: true },
   { label: "Analytics et intégrations CRM en temps réel", enabled: false },
-];
-
-const invoices = [
-  { date: "1 mai 2026", amount: "87,00 €" },
-  { date: "1 avr. 2026", amount: "87,00 €" },
-  { date: "1 mars 2026", amount: "58,00 €" },
 ];
 
 function OptRow({ title, desc, defaultOn, locked }: { title: string; desc: string; defaultOn: boolean; locked?: boolean }) {
@@ -307,7 +302,20 @@ export default async function AccountPage() {
                 <b>{plan.price}</b> {plan.period} · facturation mensuelle
               </div>
             </div>
-            <Button variant="outline">Changer de plan</Button>
+            {organization?.plan === "free" || !organization ? (
+              <UpgradePlanDialog />
+            ) : (
+              <div className="flex flex-col items-end gap-2">
+                <ManageBillingButton />
+                <UpgradePlanDialog
+                  trigger={
+                    <button type="button" className="text-xs text-primary hover:underline">
+                      Changer de formule
+                    </button>
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -324,39 +332,19 @@ export default async function AccountPage() {
             ))}
           </div>
 
-          <Separator />
-
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">Moyen de paiement</h3>
-            <div className="flex items-center justify-between gap-4">
+          {organization?.plan !== "free" && (
+            <>
+              <Separator />
               <div>
-                <div className="text-sm font-medium">Visa •••• 4242</div>
-                <div className="text-xs text-muted-foreground">Expire 08/28</div>
+                <h3 className="mb-2 text-sm font-semibold">Moyen de paiement & factures</h3>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Géré de façon sécurisée par Stripe — mets à jour ta carte, télécharge tes factures ou
+                  annule ton abonnement.
+                </p>
+                <ManageBillingButton />
               </div>
-              <Button variant="outline" size="sm">
-                Mettre à jour
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">Historique des factures</h3>
-            <div className="flex flex-col gap-2">
-              {invoices.map((inv) => (
-                <div key={inv.date} className="flex items-center gap-3 text-sm">
-                  <FileText className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="flex-1 text-muted-foreground">{inv.date}</span>
-                  <span className="font-medium">{inv.amount}</span>
-                  <Badge variant="secondary">Payée</Badge>
-                </div>
-              ))}
-            </div>
-            <a href="#" className="mt-3 inline-block text-xs text-primary hover:underline">
-              Voir toutes les factures
-            </a>
-          </div>
+            </>
+          )}
         </TabsContent>
       </Card>
     </Tabs>
