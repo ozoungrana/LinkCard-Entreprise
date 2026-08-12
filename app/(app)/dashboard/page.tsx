@@ -4,7 +4,7 @@ import { Download, Pencil, Plus, Share2, TrendingUp, Users } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ShareCardDialog } from "@/components/features/share-card-dialog";
+import { CardQrThumbnail, ShareCardDialog } from "@/components/features/share-card-dialog";
 import { getAnalyticsCounts, getCurrentUser, getMyLeads, getMyProfiles } from "@/lib/supabase/queries";
 
 function initialsOf(name: string) {
@@ -128,18 +128,25 @@ export default async function DashboardPage() {
           <CardContent className="flex flex-col gap-4">
             {activeCard ? (
               <>
-                <div className="rounded-lg bg-gradient-to-br from-primary to-blue-400 p-4 text-primary-foreground">
-                  <Avatar className="size-10 border-2 border-white/40">
-                    <AvatarFallback className="bg-white/20 text-white">
-                      {initialsOf(activeCard.full_name ?? "Carte")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="mt-3 font-display font-semibold">
-                    {activeCard.full_name ?? "Carte sans nom"}
+                <div className="flex items-start justify-between gap-3 rounded-lg bg-gradient-to-br from-primary to-blue-400 p-4 text-primary-foreground">
+                  <div>
+                    <Avatar className="size-10 border-2 border-white/40">
+                      <AvatarFallback className="bg-white/20 text-white">
+                        {initialsOf(activeCard.full_name ?? "Carte")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="mt-3 font-display font-semibold">
+                      {activeCard.full_name ?? "Carte sans nom"}
+                    </div>
+                    <div className="text-sm text-primary-foreground/80">
+                      {[activeCard.job_title, activeCard.company].filter(Boolean).join(" · ")}
+                    </div>
                   </div>
-                  <div className="text-sm text-primary-foreground/80">
-                    {[activeCard.job_title, activeCard.company].filter(Boolean).join(" · ")}
-                  </div>
+                  <ShareCardDialog
+                    slug={activeCard.slug}
+                    cardName={activeCard.full_name ?? "cette carte"}
+                    trigger={<CardQrThumbnail slug={activeCard.slug} />}
+                  />
                 </div>
                 <div className="flex gap-2">
                   <ShareCardDialog
