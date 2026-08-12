@@ -10,10 +10,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateCardDialog } from "@/components/features/create-card-dialog";
 import { DeleteCardMenuItem } from "@/components/features/delete-card-button";
 import { CardQrThumbnail, ShareCardDialog } from "@/components/features/share-card-dialog";
 import { getMyProfiles, getViewCountsByProfile } from "@/lib/supabase/queries";
+
+function initialsOf(name: string) {
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "?"
+  );
+}
 
 const typeLabels: Record<string, string> = {
   entreprise: "Entreprise",
@@ -66,12 +79,20 @@ export default async function CardsPage() {
                 <Badge variant="outline" className="w-fit border-white/40 text-white">
                   {typeLabels[card.type]}
                 </Badge>
-                <div>
-                  <div className="font-display font-semibold">
-                    {card.full_name ?? "Carte sans nom"}
-                  </div>
-                  <div className="text-sm text-white/85">
-                    {[card.job_title, card.company].filter(Boolean).join(" · ")}
+                <div className="flex items-center gap-2">
+                  <Avatar className="border-2 border-white/40">
+                    {card.avatar_url && <AvatarImage src={card.avatar_url} alt="" />}
+                    <AvatarFallback className="bg-white/20 text-white">
+                      {initialsOf(card.full_name ?? "?")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-display font-semibold">
+                      {card.full_name ?? "Carte sans nom"}
+                    </div>
+                    <div className="text-sm text-white/85">
+                      {[card.job_title, card.company].filter(Boolean).join(" · ")}
+                    </div>
                   </div>
                 </div>
               </div>
