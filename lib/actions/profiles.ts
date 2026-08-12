@@ -17,7 +17,7 @@ function slugify(input: string) {
   );
 }
 
-export async function createProfile(name: string, type: string) {
+async function createProfileRow(name: string, type: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -52,7 +52,7 @@ export async function createProfile(name: string, type: string) {
       type,
       slug,
     })
-    .select("id")
+    .select("id, slug")
     .single();
 
   if (error || !data) {
@@ -60,7 +60,18 @@ export async function createProfile(name: string, type: string) {
   }
 
   revalidatePath("/cards");
-  redirect(`/editor/${data.id}`);
+  return data as { id: string; slug: string };
+}
+
+export async function createProfile(name: string, type: string) {
+  const { id } = await createProfileRow(name, type);
+  redirect(`/editor/${id}`);
+}
+
+// Used by the onboarding wizard, which drives its own step navigation
+// instead of jumping straight to the full editor.
+export async function createProfileForOnboarding(name: string, type: string) {
+  return createProfileRow(name, type);
 }
 
 export type ProfileFormValues = {

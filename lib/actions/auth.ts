@@ -49,7 +49,7 @@ export async function signup(_prevState: AuthState, formData: FormData): Promise
     return { error: error.message };
   }
 
-  redirect("/login?registered=1");
+  redirect("/onboarding");
 }
 
 export async function logout() {
