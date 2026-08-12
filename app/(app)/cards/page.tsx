@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateCardDialog } from "@/components/features/create-card-dialog";
 import { DeleteCardMenuItem } from "@/components/features/delete-card-button";
-import { ShareCardDialog } from "@/components/features/share-card-dialog";
+import { CardQrThumbnail, ShareCardDialog } from "@/components/features/share-card-dialog";
 import { getMyProfiles, getViewCountsByProfile } from "@/lib/supabase/queries";
 
 const typeLabels: Record<string, string> = {
@@ -76,31 +76,40 @@ export default async function CardsPage() {
                 </div>
               </div>
               <CardContent className="flex flex-col gap-3 py-4">
-                <div className="flex items-center justify-between">
-                  <strong className="text-sm">{card.full_name ?? "Carte sans nom"}</strong>
-                  <span
-                    className={`text-xs font-medium ${
-                      card.status === "published"
-                        ? "text-success"
-                        : card.status === "draft"
-                          ? "text-warning"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    ●{" "}
-                    {card.status === "published"
-                      ? "Publiée"
-                      : card.status === "draft"
-                        ? "Brouillon"
-                        : "Archivée"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Eye className="size-3.5" />
-                    {viewCounts.get(card.id) ?? 0} vues
-                  </span>
-                  <span>{timeAgo(card.updated_at)}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-sm">{card.full_name ?? "Carte sans nom"}</strong>
+                      <span
+                        className={`text-xs font-medium ${
+                          card.status === "published"
+                            ? "text-success"
+                            : card.status === "draft"
+                              ? "text-warning"
+                              : "text-muted-foreground"
+                        }`}
+                      >
+                        ●{" "}
+                        {card.status === "published"
+                          ? "Publiée"
+                          : card.status === "draft"
+                            ? "Brouillon"
+                            : "Archivée"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Eye className="size-3.5" />
+                        {viewCounts.get(card.id) ?? 0} vues
+                      </span>
+                      <span>{timeAgo(card.updated_at)}</span>
+                    </div>
+                  </div>
+                  <ShareCardDialog
+                    slug={card.slug}
+                    cardName={card.full_name ?? "cette carte"}
+                    trigger={<CardQrThumbnail slug={card.slug} />}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Button asChild variant="secondary" size="sm" className="flex-1">
@@ -109,7 +118,6 @@ export default async function CardsPage() {
                       Éditer
                     </Link>
                   </Button>
-                  <ShareCardDialog slug={card.slug} cardName={card.full_name ?? "cette carte"} />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon-sm">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { Check, Copy, Download, Share2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
@@ -15,6 +15,33 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+
+export const CardQrThumbnail = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { slug: string; size?: number }
+>(function CardQrThumbnail({ slug, size = 56, ...props }, ref) {
+  const [url, setUrl] = useState("");
+
+  useEffect(() => {
+    setUrl(`${window.location.origin}/c/${slug}`);
+  }, [slug]);
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className="shrink-0 rounded-md border bg-white p-1 transition-opacity hover:opacity-80"
+      aria-label="Afficher et partager le QR Code"
+      {...props}
+    >
+      {url ? (
+        <QRCodeCanvas value={url} size={size} marginSize={0} level="M" />
+      ) : (
+        <div className="bg-muted" style={{ width: size, height: size }} />
+      )}
+    </button>
+  );
+});
 
 export function ShareCardDialog({
   slug,
