@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import {
   Calendar,
   FileText,
@@ -14,6 +15,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReciprocalForm } from "@/components/features/reciprocal-form";
 import { getPublishedProfileBySlug, recordProfileView } from "@/lib/supabase/queries";
 import type { Profile } from "@/lib/supabase/types";
+
+function parseUserAgent(ua: string) {
+  const device = /Mobi|Android/i.test(ua) ? "Mobile" : /Tablet|iPad/i.test(ua) ? "Tablette" : "Ordinateur";
+  let browser = "Autre";
+  if (/EdgA?\//.test(ua)) browser = "Edge";
+  else if (/Chrome\//.test(ua) && !/Chromium|OPR\//.test(ua)) browser = "Chrome";
+  else if (/CriOS\//.test(ua)) browser = "Chrome";
+  else if (/Firefox\//.test(ua)) browser = "Firefox";
+  else if (/Safari\//.test(ua) && !/Chrome|CriOS/.test(ua)) browser = "Safari";
+  return { device, browser };
+}
 
 function initialsOf(name: string) {
   return (
@@ -48,10 +60,13 @@ function buildVCardHref(profile: Profile) {
 
 export default async function PublicProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ channel?: string }>;
 }) {
   const { slug } = await params;
+  const { channel } = await searchParams;
   const profile = await getPublishedProfileBySlug(slug);
 
   if (!profile) {
@@ -66,7 +81,14 @@ export default async function PublicProfilePage({
     );
   }
 
-  await recordProfileView(profile.id);
+  const h = await headers();
+  const { device, browser } = parseUserAgent(h.get("user-agent") ?? "");
+  await recordProfileView(profile.id, {
+    channel,
+    device,
+    browser,
+    country: h.get("x-vercel-ip-country"),
+  });
 
   const displayName = profile.full_name ?? "Carte LinkCard";
   const whatsappDigits = profile.whatsapp_number?.replace(/[^0-9]/g, "");

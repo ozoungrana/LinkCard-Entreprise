@@ -23,7 +23,7 @@ export const CardQrThumbnail = forwardRef<
   const [url, setUrl] = useState("");
 
   useEffect(() => {
-    setUrl(`${window.location.origin}/c/${slug}`);
+    setUrl(`${window.location.origin}/c/${slug}?channel=qr`);
   }, [slug]);
 
   return (
@@ -61,6 +61,8 @@ export function ShareCardDialog({
     if (open) setUrl(`${window.location.origin}/c/${slug}`);
   }, [open, slug]);
 
+  const qrUrl = url ? `${url}?channel=qr` : "";
+
   function copyLink() {
     navigator.clipboard.writeText(url);
     setCopied(true);
@@ -96,7 +98,7 @@ export function ShareCardDialog({
 
         <div className="flex flex-col items-center gap-4">
           <div ref={canvasRef} className="rounded-lg border bg-white p-4">
-            {url && <QRCodeCanvas value={url} size={200} marginSize={0} level="M" />}
+            {qrUrl && <QRCodeCanvas value={qrUrl} size={200} marginSize={0} level="M" />}
           </div>
 
           <div className="flex w-full items-center gap-2">

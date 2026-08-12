@@ -3,18 +3,75 @@ import { TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   getAnalyticsCounts,
+  getChannelBreakdown,
+  getCountryBreakdown,
   getDailyViewCounts,
+  getDeviceBreakdown,
   getMyLeads,
   getMyProfiles,
 } from "@/lib/supabase/queries";
 
+const CHANNEL_LABELS: Record<string, string> = {
+  qr: "QR Code",
+  nfc: "NFC",
+  email_signature: "Signature email",
+  lien_direct: "Lien direct",
+  ocr: "OCR",
+  import_csv: "Import CSV",
+};
+
+function BreakdownList({
+  title,
+  rows,
+  labels,
+  total,
+}: {
+  title: string;
+  rows: { key: string; count: number }[];
+  labels?: Record<string, string>;
+  total: number;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Pas encore de données.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {rows.map((r) => (
+              <div key={r.key} className="flex items-center gap-2 text-sm">
+                <span className="w-28 shrink-0 truncate text-muted-foreground">
+                  {labels?.[r.key] ?? r.key}
+                </span>
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${total > 0 ? (r.count / total) * 100 : 0}%` }}
+                  />
+                </div>
+                <span className="w-8 shrink-0 text-right font-medium">{r.count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function AnalyticsPage() {
   const profiles = await getMyProfiles();
   const profileIds = profiles.map((p) => p.id);
-  const [counts, dailyViews, leads] = await Promise.all([
+  const [counts, dailyViews, leads, channelRows, deviceRows, countryRows] = await Promise.all([
     getAnalyticsCounts(profileIds),
     getDailyViewCounts(profileIds),
     getMyLeads(),
+    getChannelBreakdown(profileIds),
+    getDeviceBreakdown(profileIds),
+    getCountryBreakdown(profileIds),
   ]);
 
   const conversionRate =
@@ -103,13 +160,27 @@ export default async function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-dashed">
-        <CardContent className="pt-6 text-sm text-muted-foreground">
-          La répartition par canal, pays, appareil et navigateur, ainsi que la heatmap de la
-          carte publique, arriveront une fois la collecte de ces métadonnées ajoutée à la page
-          publique.
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <BreakdownList
+          title="Par canal"
+          rows={channelRows.map((r) => ({ key: r.channel, count: r.count }))}
+          labels={CHANNEL_LABELS}
+          total={counts.view}
+        />
+        <BreakdownList
+          title="Par appareil"
+          rows={deviceRows.map((r) => ({ key: r.device, count: r.count }))}
+          total={counts.view}
+        />
+        <BreakdownList
+          title="Par pays"
+          rows={countryRows.map((r) => ({ key: r.country, count: r.count }))}
+          total={counts.view}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        La heatmap de la carte publique arrivera avec le suivi des clics par zone.
+      </p>
     </div>
   );
 }

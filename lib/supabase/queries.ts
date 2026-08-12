@@ -146,9 +146,86 @@ export async function getPublishedProfileBySlug(slug: string): Promise<Profile |
   return (data as Profile) ?? null;
 }
 
-export async function recordProfileView(profileId: string) {
+export type ViewMeta = {
+  channel?: string | null;
+  country?: string | null;
+  device?: string | null;
+  browser?: string | null;
+};
+
+export async function recordProfileView(profileId: string, meta: ViewMeta = {}) {
   const supabase = await createClient();
-  await supabase.from("analytics_events").insert({ profile_id: profileId, event_type: "view" });
+  await supabase.from("analytics_events").insert({
+    profile_id: profileId,
+    event_type: "view",
+    channel: meta.channel ?? "lien_direct",
+    country: meta.country ?? null,
+    device: meta.device ?? null,
+    browser: meta.browser ?? null,
+  });
+}
+
+export async function getChannelBreakdown(
+  profileIds: string[]
+): Promise<{ channel: string; count: number }[]> {
+  if (profileIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("analytics_events")
+    .select("channel")
+    .eq("event_type", "view")
+    .in("profile_id", profileIds);
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const key = row.channel ?? "lien_direct";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([channel, count]) => ({ channel, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export async function getDeviceBreakdown(
+  profileIds: string[]
+): Promise<{ device: string; count: number }[]> {
+  if (profileIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("analytics_events")
+    .select("device")
+    .eq("event_type", "view")
+    .in("profile_id", profileIds);
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const key = row.device ?? "Inconnu";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([device, count]) => ({ device, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export async function getCountryBreakdown(
+  profileIds: string[]
+): Promise<{ country: string; count: number }[]> {
+  if (profileIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("analytics_events")
+    .select("country")
+    .eq("event_type", "view")
+    .in("profile_id", profileIds);
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const key = row.country ?? "Inconnu";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
 export type LeadWithNotes = Lead & { lead_notes: LeadNote[] };
