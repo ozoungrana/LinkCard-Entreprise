@@ -135,6 +135,23 @@ export type WorkflowExecution = {
   created_at: string;
 };
 
+export type NotificationType =
+  | "lead_captured"
+  | "card_viewed"
+  | "workflow_failed"
+  | "workflow_succeeded"
+  | "reminder_due"
+  | "system";
+
+export type AppNotification = {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  payload: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
+};
+
 export type AnalyticsEvent = {
   id: string;
   profile_id: string | null;

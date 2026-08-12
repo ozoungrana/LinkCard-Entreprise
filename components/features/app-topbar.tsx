@@ -1,11 +1,13 @@
 "use client";
 
+import { useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Bell, Moon, Search, Sun } from "lucide-react";
 
 import { logout } from "@/lib/actions/auth";
+import { markAllNotificationsRead, markNotificationRead } from "@/lib/actions/notifications";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -19,12 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { navGroups } from "@/lib/nav";
-
-const notifications = [
-  { title: "Sophie Durand a enregistré votre contact", time: "il y a 2h", unread: true },
-  { title: "Le workflow « Sync HubSpot » a échoué", time: "Hier, 18:47", unread: true },
-  { title: "Votre carte a été vue 23 fois", time: "il y a 1j", unread: false },
-];
+import type { AppNotification } from "@/lib/supabase/types";
 
 const allItems = navGroups.flatMap((g) => g.items);
 
@@ -40,13 +37,65 @@ function initialsOf(input: string) {
   );
 }
 
-export function AppTopbar({ user }: { user: { name: string; email: string } }) {
+function notificationText(n: AppNotification): string {
+  const p = n.payload as Record<string, string | undefined>;
+  switch (n.type) {
+    case "lead_captured":
+      return `${p.lead_name ?? "Un visiteur"} a enregistré son contact sur « ${p.profile_name ?? "ta carte"} »`;
+    case "card_viewed":
+      return `Ta carte « ${p.profile_name ?? ""} » a été vue`;
+    case "workflow_failed":
+      return `Le workflow « ${p.workflow_name ?? ""} » a échoué`;
+    case "workflow_succeeded":
+      return `Le workflow « ${p.workflow_name ?? ""} » s'est exécuté avec succès`;
+    case "reminder_due":
+      return p.message ?? "Rappel programmé";
+    default:
+      return p.message ?? "Notification";
+  }
+}
+
+function timeAgo(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const hours = Math.floor(diffMs / 3_600_000);
+  if (hours < 1) return "à l'instant";
+  if (hours < 24) return `il y a ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `il y a ${days}j`;
+}
+
+export function AppTopbar({
+  user,
+  notifications,
+}: {
+  user: { name: string; email: string };
+  notifications: AppNotification[];
+}) {
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
+  const [, startTransition] = useTransition();
 
   const current =
     allItems.find((item) => (item.href === "/" ? pathname === "/" : pathname.startsWith(item.href))) ??
     allItems[0];
+
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+
+  function handleMarkAllRead() {
+    startTransition(async () => {
+      await markAllNotificationsRead();
+      router.refresh();
+    });
+  }
+
+  function handleNotificationClick(n: AppNotification) {
+    if (n.read_at) return;
+    startTransition(async () => {
+      await markNotificationRead(n.id);
+      router.refresh();
+    });
+  }
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b px-4">
@@ -80,24 +129,44 @@ export function AppTopbar({ user }: { user: { name: string; email: string } }) {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
             <Bell className="size-4" />
-            <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-danger" />
+            {unreadCount > 0 && (
+              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-danger" />
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80">
           <DropdownMenuLabel className="flex items-center justify-between">
             Notifications
-            <span className="text-xs font-normal text-primary">Tout marquer comme lu</span>
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                className="text-xs font-normal text-primary hover:underline"
+                onClick={handleMarkAllRead}
+              >
+                Tout marquer comme lu
+              </button>
+            )}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {notifications.map((n) => (
-            <DropdownMenuItem key={n.title} className="flex flex-col items-start gap-0.5">
-              <span className="flex items-center gap-2 text-sm">
-                {n.unread && <span className="size-1.5 rounded-full bg-primary" />}
-                {n.title}
-              </span>
-              <span className="text-xs text-muted-foreground">{n.time}</span>
-            </DropdownMenuItem>
-          ))}
+          {notifications.length === 0 ? (
+            <p className="px-2 py-3 text-center text-sm text-muted-foreground">
+              Aucune notification pour l&apos;instant.
+            </p>
+          ) : (
+            notifications.map((n) => (
+              <DropdownMenuItem
+                key={n.id}
+                className="flex flex-col items-start gap-0.5"
+                onSelect={() => handleNotificationClick(n)}
+              >
+                <span className="flex items-center gap-2 text-sm">
+                  {!n.read_at && <span className="size-1.5 shrink-0 rounded-full bg-primary" />}
+                  {notificationText(n)}
+                </span>
+                <span className="text-xs text-muted-foreground">{timeAgo(n.created_at)}</span>
+              </DropdownMenuItem>
+            ))
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import type {
+  AppNotification,
   AppUser,
   Lead,
   LeadNote,
@@ -353,4 +354,20 @@ export async function getAllUsers(): Promise<AppUser[]> {
     .order("created_at", { ascending: false })
     .limit(50);
   return (data as AppUser[]) ?? [];
+}
+
+export async function getMyNotifications(limit = 10): Promise<AppNotification[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data as AppNotification[]) ?? [];
 }

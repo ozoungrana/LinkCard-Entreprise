@@ -4,6 +4,7 @@ import { AppTopbar } from "@/components/features/app-topbar";
 import {
   getCurrentOrganization,
   getCurrentUser,
+  getMyNotifications,
   getOrganizationMembers,
 } from "@/lib/supabase/queries";
 
@@ -15,7 +16,11 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const [user, organization] = await Promise.all([getCurrentUser(), getCurrentOrganization()]);
+  const [user, organization, notifications] = await Promise.all([
+    getCurrentUser(),
+    getCurrentOrganization(),
+    getMyNotifications(),
+  ]);
   const members = organization ? await getOrganizationMembers(organization.id) : [];
   const activeSeats = members.filter((m) => m.status === "active").length;
 
@@ -35,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <SidebarProvider>
       <AppSidebar user={sidebarUser} plan={sidebarPlan} />
       <SidebarInset>
-        <AppTopbar user={sidebarUser} />
+        <AppTopbar user={sidebarUser} notifications={notifications} />
         <div className="flex-1 overflow-auto p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
