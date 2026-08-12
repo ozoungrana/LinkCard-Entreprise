@@ -68,6 +68,7 @@ export type ProfileFormValues = {
   job_title: string;
   company: string;
   phone: string;
+  whatsapp_number: string;
   email: string;
   address: string;
   website_url: string;
@@ -147,4 +148,57 @@ export async function setProfileStatus(
 
   revalidatePath(`/editor/${profileId}`);
   revalidatePath("/cards");
+}
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+export async function uploadAvatar(profileId: string, file: File) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    throw new Error("Format non supporté. Utilise une image JPEG, PNG ou WebP.");
+  }
+  if (file.size > MAX_AVATAR_BYTES) {
+    throw new Error("L'image dépasse 5 Mo. Choisis un fichier plus léger.");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", profileId)
+    .eq("owner_id", user.id)
+    .single();
+  if (!profile) throw new Error("Carte introuvable.");
+
+  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `${user.id}/${profileId}.${extension}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(path);
+  // Cache-bust so the new photo shows immediately even though the path is stable.
+  const avatarUrl = `${publicUrl}?v=${Date.now()}`;
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+    .eq("id", profileId)
+    .eq("owner_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/editor/${profileId}`);
+  revalidatePath("/cards");
+  revalidatePath("/dashboard");
+
+  return { avatarUrl } as const;
 }

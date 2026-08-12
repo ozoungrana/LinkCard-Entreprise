@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Calendar,
+  Camera,
   Check,
   Globe,
   History,
   Link2,
   Mail,
   MapPin,
+  MessageCircle,
   Phone,
   Save,
   User,
@@ -19,6 +21,7 @@ import {
 import {
   setProfileStatus,
   updateProfile,
+  uploadAvatar,
   type ProfileFormValues,
 } from "@/lib/actions/profiles";
 import { Button } from "@/components/ui/button";
@@ -33,7 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Profile } from "@/lib/supabase/types";
 
 const swatches = ["#2563EB", "#06B6D4", "#DB2777", "#111827", "#22C55E", "#EA580C"];
@@ -56,6 +59,7 @@ export function EditorForm({ profile }: { profile: Profile }) {
     job_title: profile.job_title ?? "",
     company: profile.company ?? "",
     phone: profile.phone ?? "",
+    whatsapp_number: profile.whatsapp_number ?? "",
     email: profile.email ?? "",
     address: profile.address ?? "",
     website_url: profile.website_url ?? "",
@@ -67,9 +71,29 @@ export function EditorForm({ profile }: { profile: Profile }) {
     template: profile.template ?? "corporate",
   });
   const [status, setStatus] = useState(profile.status);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
+  const [avatarPending, setAvatarPending] = useState(false);
   const [pending, startTransition] = useTransition();
   const [publishPending, startPublishTransition] = useTransition();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setAvatarPending(true);
+    uploadAvatar(profile.id, file)
+      .then(({ avatarUrl: url }) => {
+        setAvatarUrl(url);
+        toast.success("Photo mise à jour");
+        router.refresh();
+      })
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : "Échec de l'envoi de la photo");
+      })
+      .finally(() => setAvatarPending(false));
+  }
 
   function set<K extends keyof ProfileFormValues>(key: K, value: ProfileFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -117,6 +141,32 @@ export function EditorForm({ profile }: { profile: Profile }) {
 
           <TabsContent value="infos" className="flex flex-col gap-4 p-4 pt-2">
             <Field>
+              <FieldLabel>Photo</FieldLabel>
+              <div className="flex items-center gap-3">
+                <Avatar size="lg">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
+                  <AvatarFallback>{initialsOf(values.full_name || "?")}</AvatarFallback>
+                </Avatar>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={avatarPending}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera />
+                  {avatarPending ? "Envoi…" : "Changer la photo"}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+            </Field>
+            <Field>
               <FieldLabel htmlFor="in-name">Nom complet</FieldLabel>
               <Input
                 id="in-name"
@@ -146,6 +196,16 @@ export function EditorForm({ profile }: { profile: Profile }) {
                 id="in-phone"
                 value={values.phone}
                 onChange={(e) => set("phone", e.target.value)}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="in-whatsapp">WhatsApp</FieldLabel>
+              <Input
+                id="in-whatsapp"
+                type="tel"
+                placeholder="+225 07 00 00 00 00"
+                value={values.whatsapp_number}
+                onChange={(e) => set("whatsapp_number", e.target.value)}
               />
             </Field>
             <Field>
@@ -214,6 +274,7 @@ export function EditorForm({ profile }: { profile: Profile }) {
             }}
           >
             <Avatar className="size-14 border-2 border-white/50">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
               <AvatarFallback className="bg-white/20 text-lg text-white">
                 {initialsOf(previewName)}
               </AvatarFallback>
@@ -242,6 +303,12 @@ export function EditorForm({ profile }: { profile: Profile }) {
             </div>
 
             <div className="mt-3 flex w-full flex-col gap-2">
+              {values.whatsapp_number && (
+                <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+                  <MessageCircle className="size-4" />
+                  WhatsApp
+                </div>
+              )}
               {values.linkedin_url && (
                 <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
                   <Link2 className="size-4" />

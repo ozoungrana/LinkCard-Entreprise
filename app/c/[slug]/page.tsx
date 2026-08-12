@@ -4,12 +4,13 @@ import {
   Link2,
   Mail,
   MapPin,
+  MessageCircle,
   Phone,
   Search,
   UserPlus,
 } from "lucide-react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReciprocalForm } from "@/components/features/reciprocal-form";
 import { getPublishedProfileBySlug, recordProfileView } from "@/lib/supabase/queries";
 import type { Profile } from "@/lib/supabase/types";
@@ -35,6 +36,7 @@ function buildVCardHref(profile: Profile) {
     profile.company ? `ORG:${profile.company}` : "",
     profile.job_title ? `TITLE:${profile.job_title}` : "",
     profile.phone ? `TEL;TYPE=CELL:${profile.phone}` : "",
+    profile.whatsapp_number ? `TEL;TYPE=WORK,VOICE:${profile.whatsapp_number}` : "",
     profile.email ? `EMAIL:${profile.email}` : "",
     profile.website_url ? `URL:${profile.website_url}` : "",
     "END:VCARD",
@@ -67,7 +69,13 @@ export default async function PublicProfilePage({
   await recordProfileView(profile.id);
 
   const displayName = profile.full_name ?? "Carte LinkCard";
+  const whatsappDigits = profile.whatsapp_number?.replace(/[^0-9]/g, "");
   const links = [
+    whatsappDigits && {
+      icon: MessageCircle,
+      label: "WhatsApp",
+      href: `https://wa.me/${whatsappDigits}`,
+    },
     profile.linkedin_url && { icon: Link2, label: "LinkedIn", href: profile.linkedin_url },
     profile.calendly_url && {
       icon: Calendar,
@@ -93,6 +101,7 @@ export default async function PublicProfilePage({
           }}
         >
           <Avatar className="size-16 border-4 border-card">
+            {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt="" />}
             <AvatarFallback className="bg-white/20 text-lg text-white">
               {initialsOf(displayName)}
             </AvatarFallback>

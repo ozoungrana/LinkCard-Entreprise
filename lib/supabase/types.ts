@@ -57,6 +57,7 @@ export type Profile = {
   job_title: string | null;
   company: string | null;
   phone: string | null;
+  whatsapp_number: string | null;
   email: string | null;
   address: string | null;
   website_url: string | null;
