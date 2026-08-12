@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, MoreHorizontal, Pencil, Plus, Share2 } from "lucide-react";
+import { Eye, MoreHorizontal, Pencil, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateCardDialog } from "@/components/features/create-card-dialog";
 import { DeleteCardMenuItem } from "@/components/features/delete-card-button";
+import { ShareCardDialog } from "@/components/features/share-card-dialog";
 import { getMyProfiles, getViewCountsByProfile } from "@/lib/supabase/queries";
 
 const typeLabels: Record<string, string> = {
@@ -108,11 +109,7 @@ export default async function CardsPage() {
                       Éditer
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="icon-sm">
-                    <Link href={`/c/${card.slug}`}>
-                      <Share2 />
-                    </Link>
-                  </Button>
+                  <ShareCardDialog slug={card.slug} cardName={card.full_name ?? "cette carte"} />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon-sm">

@@ -4,6 +4,7 @@ import { Download, Pencil, Plus, Share2, TrendingUp, Users } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ShareCardDialog } from "@/components/features/share-card-dialog";
 import { getAnalyticsCounts, getCurrentUser, getMyLeads, getMyProfiles } from "@/lib/supabase/queries";
 
 function initialsOf(name: string) {
@@ -141,12 +142,16 @@ export default async function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button asChild className="flex-1">
-                    <Link href={`/c/${activeCard.slug}`}>
-                      <Share2 />
-                      Partager ma carte
-                    </Link>
-                  </Button>
+                  <ShareCardDialog
+                    slug={activeCard.slug}
+                    cardName={activeCard.full_name ?? "cette carte"}
+                    trigger={
+                      <Button className="flex-1">
+                        <Share2 />
+                        Partager ma carte
+                      </Button>
+                    }
+                  />
                   <Button asChild variant="outline" className="flex-1">
                     <Link href={`/editor/${activeCard.id}`}>
                       <Pencil />
