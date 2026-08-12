@@ -300,6 +300,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
             <ShareCardDialog
               slug={profile.slug}
               cardName={fullName || "ma carte"}
+              jobTitle={jobTitle}
+              company={company}
+              color={color}
               trigger={<CardQrThumbnail slug={profile.slug} size={120} />}
             />
             <Button className="w-full" onClick={() => router.push("/dashboard")}>

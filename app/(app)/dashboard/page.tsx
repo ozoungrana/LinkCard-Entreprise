@@ -146,6 +146,11 @@ export default async function DashboardPage() {
                   <ShareCardDialog
                     slug={activeCard.slug}
                     cardName={activeCard.full_name ?? "cette carte"}
+                    jobTitle={activeCard.job_title}
+                    company={activeCard.company}
+                    phone={activeCard.phone}
+                    email={activeCard.email}
+                    color={activeCard.brand_primary_color}
                     trigger={<CardQrThumbnail slug={activeCard.slug} />}
                   />
                 </div>
@@ -153,6 +158,11 @@ export default async function DashboardPage() {
                   <ShareCardDialog
                     slug={activeCard.slug}
                     cardName={activeCard.full_name ?? "cette carte"}
+                    jobTitle={activeCard.job_title}
+                    company={activeCard.company}
+                    phone={activeCard.phone}
+                    email={activeCard.email}
+                    color={activeCard.brand_primary_color}
                     trigger={
                       <Button className="flex-1">
                         <Share2 />

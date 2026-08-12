@@ -129,6 +129,11 @@ export default async function CardsPage() {
                   <ShareCardDialog
                     slug={card.slug}
                     cardName={card.full_name ?? "cette carte"}
+                    jobTitle={card.job_title}
+                    company={card.company}
+                    phone={card.phone}
+                    email={card.email}
+                    color={card.brand_primary_color}
                     trigger={<CardQrThumbnail slug={card.slug} />}
                   />
                 </div>

@@ -2,10 +2,23 @@ import { Palette, Plug, Shield, ShieldCheck, Users } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandingForm } from "@/components/features/branding-form";
-import { getCurrentOrganization, getOrganizationMembers } from "@/lib/supabase/queries";
+import {
+  getCrmConnections,
+  getCurrentOrganization,
+  getOrganizationMembers,
+} from "@/lib/supabase/queries";
+import type { CrmProvider } from "@/lib/supabase/types";
+
+const CRM_PROVIDERS: { value: CrmProvider; label: string }[] = [
+  { value: "hubspot", label: "HubSpot" },
+  { value: "salesforce", label: "Salesforce" },
+  { value: "pipedrive", label: "Pipedrive" },
+  { value: "zoho", label: "Zoho" },
+];
 
 const roleLabels: Record<string, string> = {
   org_admin: "Admin d'organisation",
@@ -41,7 +54,10 @@ export default async function AdminPage() {
     );
   }
 
-  const members = await getOrganizationMembers(organization.id);
+  const [members, crmConnections] = await Promise.all([
+    getOrganizationMembers(organization.id),
+    getCrmConnections(organization.id),
+  ]);
 
   return (
     <Tabs
@@ -111,9 +127,36 @@ export default async function AdminPage() {
           <BrandingForm organization={organization} />
         </TabsContent>
 
-        <TabsContent value="crm">
-          <p className="text-sm text-muted-foreground">
-            Les intégrations CRM (HubSpot, Salesforce, Pipedrive, Zoho) arrivent bientôt.
+        <TabsContent value="crm" className="flex flex-col gap-4">
+          <div>
+            <h3 className="text-sm font-semibold">Intégrations CRM</h3>
+            <p className="text-xs text-muted-foreground">
+              Synchronise tes contacts capturés vers ton CRM.
+            </p>
+          </div>
+          {CRM_PROVIDERS.map((provider) => {
+            const connection = crmConnections.find((c) => c.provider === provider.value);
+            const connected = connection?.status === "connected";
+            return (
+              <div key={provider.value} className="flex items-center gap-3 rounded-lg border p-3">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                  <Plug className="size-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">{provider.label}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {connected ? "Connecté" : "Non connecté"}
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" disabled>
+                  {connected ? "Déconnecter" : "Connecter"}
+                </Button>
+              </div>
+            );
+          })}
+          <p className="text-xs text-muted-foreground">
+            La connexion nécessite l&apos;enregistrement d&apos;une application OAuth auprès de
+            chaque fournisseur — désactivée tant que ces identifiants ne sont pas configurés.
           </p>
         </TabsContent>
 

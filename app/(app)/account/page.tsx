@@ -3,10 +3,8 @@ import {
   Download,
   FileText,
   Laptop,
-  RefreshCw,
   Shield,
   Smartphone,
-  Wifi,
   WifiOff,
 } from "lucide-react";
 
@@ -17,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManageBillingButton, UpgradePlanDialog } from "@/components/features/billing-actions";
+import { OfflineStatus } from "@/components/features/offline-status";
 import {
   getCurrentOrganization,
   getMyLeads,
@@ -40,10 +39,10 @@ const sessions = [
 ];
 
 const offlineChecklist = [
-  { label: "Affichage du QR code et du profil de base", enabled: true },
-  { label: "Écriture et lecture de la puce NFC", enabled: true },
-  { label: "Enregistrement local des nouveaux contacts scannés", enabled: true },
-  { label: "Analytics et intégrations CRM en temps réel", enabled: false },
+  { label: "Affichage de la dernière carte publique consultée", enabled: true },
+  { label: "Téléchargement du contact (vCard) déjà en cache", enabled: true },
+  { label: "Écriture et lecture de la puce NFC hors-ligne", enabled: false },
+  { label: "Enregistrement local des nouveaux contacts scannés", enabled: false },
 ];
 
 function OptRow({ title, desc, defaultOn, locked }: { title: string; desc: string; defaultOn: boolean; locked?: boolean }) {
@@ -240,17 +239,7 @@ export default async function AccountPage() {
         <TabsContent value="offline" className="flex flex-col gap-6">
           <div>
             <h3 className="mb-2 text-sm font-semibold">Statut</h3>
-            <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/5 p-3">
-              <Wifi className="size-5 text-success" />
-              <div className="flex-1">
-                <div className="text-sm font-medium">Vous êtes en ligne</div>
-                <div className="text-xs text-muted-foreground">
-                  Toutes les fonctionnalités sont disponibles
-                </div>
-              </div>
-              <span className="text-xs text-muted-foreground">Simuler hors-ligne</span>
-              <Switch />
-            </div>
+            <OfflineStatus />
             <p className="mb-2 mt-4 text-xs text-muted-foreground">
               Ce qui reste disponible sans connexion réseau :
             </p>
@@ -267,29 +256,6 @@ export default async function AccountPage() {
                 </div>
               ))}
             </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h3 className="text-sm font-semibold">Synchronisation</h3>
-            <div className="flex items-center justify-between gap-4 py-2.5">
-              <div>
-                <div className="text-sm font-medium">Dernière synchronisation</div>
-                <div className="text-xs text-muted-foreground">
-                  15 mai 2026, 14:30 — toutes les données sont à jour
-                </div>
-              </div>
-              <Button size="sm">
-                <RefreshCw />
-                Synchroniser maintenant
-              </Button>
-            </div>
-            <OptRow
-              title="Synchronisation automatique"
-              desc="Dès qu'une connexion est détectée"
-              defaultOn
-            />
           </div>
         </TabsContent>
 

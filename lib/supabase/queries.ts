@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   AppNotification,
   AppUser,
+  CrmConnection,
   Lead,
   LeadNote,
   Organization,
@@ -354,6 +355,15 @@ export async function getAllUsers(): Promise<AppUser[]> {
     .order("created_at", { ascending: false })
     .limit(50);
   return (data as AppUser[]) ?? [];
+}
+
+export async function getCrmConnections(organizationId: string): Promise<CrmConnection[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("crm_connections")
+    .select("id, organization_id, provider, status, created_at")
+    .eq("organization_id", organizationId);
+  return (data as CrmConnection[]) ?? [];
 }
 
 export async function getMyNotifications(limit = 10): Promise<AppNotification[]> {

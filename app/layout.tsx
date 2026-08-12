@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,6 +24,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "LinkCard Enterprise",
   description: "Digital Business Identity — identité professionnelle, capture de leads, CRM, analytics et automatisation.",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2563EB",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -41,6 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           <TooltipProvider>{children}</TooltipProvider>
           <Toaster />
+          <ServiceWorkerRegister />
         </ThemeProvider>
       </body>
     </html>

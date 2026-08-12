@@ -9,6 +9,15 @@ export type ProfileStatus = "draft" | "published" | "archived";
 export type LeadChannel = "qr" | "nfc" | "email_signature" | "lien_direct" | "ocr" | "import_csv";
 export type LeadStage = "nouveau" | "contacte" | "qualifie" | "proposition" | "client" | "perdu";
 export type ExecutionStatus = "success" | "failed" | "running";
+export type CrmProvider = "hubspot" | "salesforce" | "pipedrive" | "zoho" | "dynamics";
+
+export type CrmConnection = {
+  id: string;
+  organization_id: string;
+  provider: CrmProvider;
+  status: string;
+  created_at: string;
+};
 
 export type Organization = {
   id: string;
