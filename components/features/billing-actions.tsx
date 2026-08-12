@@ -17,10 +17,6 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-function isRedirectError(e: unknown) {
-  return !!e && typeof e === "object" && "digest" in e && String(e.digest).startsWith("NEXT_REDIRECT");
-}
-
 export function UpgradePlanDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [seats, setSeats] = useState(3);
@@ -28,12 +24,8 @@ export function UpgradePlanDialog({ trigger }: { trigger?: React.ReactNode }) {
 
   function upgrade(plan: "pro" | "business") {
     startTransition(async () => {
-      try {
-        await createCheckoutSession(plan, plan === "business" ? seats : undefined);
-      } catch (e) {
-        if (isRedirectError(e)) throw e;
-        toast.error(e instanceof Error ? e.message : "Impossible de démarrer le paiement");
-      }
+      const result = await createCheckoutSession(plan, plan === "business" ? seats : undefined);
+      if (result?.error) toast.error(result.error);
     });
   }
 
@@ -94,12 +86,8 @@ export function ManageBillingButton() {
 
   function manage() {
     startTransition(async () => {
-      try {
-        await createBillingPortalSession();
-      } catch (e) {
-        if (isRedirectError(e)) throw e;
-        toast.error(e instanceof Error ? e.message : "Impossible d'ouvrir le portail de facturation");
-      }
+      const result = await createBillingPortalSession();
+      if (result?.error) toast.error(result.error);
     });
   }
 
