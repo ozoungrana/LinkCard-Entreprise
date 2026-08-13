@@ -4,7 +4,7 @@ import { Calendar, FileText, Link2, MessageCircle, Search } from "lucide-react";
 import { CardFace } from "@/components/features/card-face";
 import { ReciprocalForm } from "@/components/features/reciprocal-form";
 import { getPublishedProfileBySlug, recordProfileView } from "@/lib/supabase/queries";
-import type { Profile } from "@/lib/supabase/types";
+import { buildVCardHref, vCardFilename } from "@/lib/vcard";
 
 function parseUserAgent(ua: string) {
   const device = /Mobi|Android/i.test(ua) ? "Mobile" : /Tablet|iPad/i.test(ua) ? "Tablette" : "Ordinateur";
@@ -15,25 +15,6 @@ function parseUserAgent(ua: string) {
   else if (/Firefox\//.test(ua)) browser = "Firefox";
   else if (/Safari\//.test(ua) && !/Chrome|CriOS/.test(ua)) browser = "Safari";
   return { device, browser };
-}
-
-function buildVCardHref(profile: Profile) {
-  const displayName = profile.full_name ?? "Carte LinkCard";
-  const vcard = [
-    "BEGIN:VCARD",
-    "VERSION:3.0",
-    `FN:${displayName}`,
-    profile.company ? `ORG:${profile.company}` : "",
-    profile.job_title ? `TITLE:${profile.job_title}` : "",
-    profile.phone ? `TEL;TYPE=CELL:${profile.phone}` : "",
-    profile.whatsapp_number ? `TEL;TYPE=WORK,VOICE:${profile.whatsapp_number}` : "",
-    profile.email ? `EMAIL:${profile.email}` : "",
-    profile.website_url ? `URL:${profile.website_url}` : "",
-    "END:VCARD",
-  ]
-    .filter(Boolean)
-    .join("\n");
-  return `data:text/vcard;charset=utf-8,${encodeURIComponent(vcard)}`;
 }
 
 export default async function PublicProfilePage({
@@ -109,7 +90,7 @@ export default async function PublicProfilePage({
           extraLinks={links}
           ctaLabel="Enregistrer le contact"
           ctaHref={buildVCardHref(profile)}
-          ctaDownload={`${displayName.replace(/\s+/g, "-")}.vcf`}
+          ctaDownload={vCardFilename(profile)}
           interactive
         />
       </div>

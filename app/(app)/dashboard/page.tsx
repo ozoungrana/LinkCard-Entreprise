@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CardQrThumbnail, ShareCardDialog } from "@/components/features/share-card-dialog";
 import { getAnalyticsCounts, getCurrentUser, getMyLeads, getMyProfiles } from "@/lib/supabase/queries";
+import { buildVCardHref, vCardFilename } from "@/lib/vcard";
 
 function initialsOf(name: string) {
   return name
@@ -177,9 +178,11 @@ export default async function DashboardPage() {
                     </Link>
                   </Button>
                 </div>
-                <Button variant="ghost" size="sm" className="w-fit">
-                  <Download />
-                  Exporter en vCard
+                <Button asChild variant="ghost" size="sm" className="w-fit">
+                  <a href={buildVCardHref(activeCard)} download={vCardFilename(activeCard)}>
+                    <Download />
+                    Exporter en vCard
+                  </a>
                 </Button>
               </>
             ) : (
