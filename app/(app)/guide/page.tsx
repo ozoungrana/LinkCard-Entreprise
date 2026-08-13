@@ -11,7 +11,6 @@ import {
   WifiOff,
   Keyboard,
   HelpCircle,
-  Lock,
   QrCode,
   Nfc,
   Mail,
@@ -29,8 +28,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { UpgradePlanDialog } from "@/components/features/billing-actions";
 import { getCurrentOrganization } from "@/lib/supabase/queries";
+
+const PLAN_LABELS: Record<string, string> = {
+  free: "Free",
+  pro: "Pro",
+  business: "Business",
+  enterprise: "Enterprise",
+};
 
 function Section({
   title,
@@ -73,19 +78,13 @@ function Note({ children }: { children: React.ReactNode }) {
 export default async function GuidePage() {
   const organization = await getCurrentOrganization();
 
-  if (!organization || organization.plan === "free") {
+  if (!organization) {
     return (
-      <Card className="flex flex-col items-center justify-center gap-3 border-dashed py-16 text-center">
-        <CardContent className="flex flex-col items-center gap-3">
-          <Lock className="size-8 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-medium">Le guide utilisateur est réservé aux abonnés</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Passe à Pro, Business ou Enterprise pour accéder au guide détaillé de toutes les
-              fonctionnalités.
-            </p>
-          </div>
-          <UpgradePlanDialog />
+      <Card className="flex flex-col items-center justify-center gap-2 border-dashed py-16 text-center">
+        <CardContent className="flex flex-col items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            Impossible de charger ton organisation pour le moment.
+          </p>
         </CardContent>
       </Card>
     );
@@ -102,7 +101,7 @@ export default async function GuidePage() {
           </p>
         </div>
         <Badge variant="secondary" className="ml-auto">
-          Abonnés {organization.plan === "pro" ? "Pro" : organization.plan === "business" ? "Business" : "Enterprise"}
+          Plan {PLAN_LABELS[organization.plan] ?? organization.plan}
         </Badge>
       </div>
 
