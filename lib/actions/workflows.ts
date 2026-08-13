@@ -5,13 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrganization } from "@/lib/supabase/queries";
 import type { Organization } from "@/lib/supabase/types";
 
+export type WorkflowActionResult = { error: string } | undefined;
+
 // Chapter 10 §2: Free has no automations at all; Pro is capped at 1 active
-// workflow; Business/Enterprise are unlimited.
-async function assertCanActivateWorkflow(organization: Organization) {
+// workflow; Business/Enterprise are unlimited. Returned as a message rather
+// than thrown — Server Action errors are redacted to a generic digest in
+// production, which would hide the upgrade hint from the user.
+async function checkCanActivateWorkflow(organization: Organization): Promise<string | null> {
   if (organization.plan === "free") {
-    throw new Error(
-      "Les automatisations ne sont pas disponibles sur le plan Free. Passe à Pro pour en profiter."
-    );
+    return "Les automatisations ne sont pas disponibles sur le plan Free. Passe à Pro pour en profiter.";
   }
   if (organization.plan === "pro") {
     const supabase = await createClient();
@@ -21,18 +23,18 @@ async function assertCanActivateWorkflow(organization: Organization) {
       .eq("organization_id", organization.id)
       .eq("is_active", true);
     if ((count ?? 0) >= 1) {
-      throw new Error(
-        "Le plan Pro est limité à 1 workflow actif. Passe à Business pour des automatisations illimitées."
-      );
+      return "Le plan Pro est limité à 1 workflow actif. Passe à Business pour des automatisations illimitées.";
     }
   }
+  return null;
 }
 
-export async function createWorkflow(name: string) {
+export async function createWorkflow(name: string): Promise<WorkflowActionResult> {
   const organization = await getCurrentOrganization();
-  if (!organization) throw new Error("Aucune organisation associée à ce compte.");
+  if (!organization) return { error: "Aucune organisation associée à ce compte." };
 
-  await assertCanActivateWorkflow(organization);
+  const limitError = await checkCanActivateWorkflow(organization);
+  if (limitError) return { error: limitError };
 
   const supabase = await createClient();
   const { error } = await supabase.from("workflows").insert({
@@ -41,17 +43,18 @@ export async function createWorkflow(name: string) {
     trigger_type: "lead_captured",
     is_active: true,
   });
-  if (error) throw new Error(error.message);
+  if (error) return { error: error.message };
 
   revalidatePath("/automations");
 }
 
-export async function toggleWorkflow(workflowId: string, isActive: boolean) {
+export async function toggleWorkflow(workflowId: string, isActive: boolean): Promise<WorkflowActionResult> {
   const organization = await getCurrentOrganization();
-  if (!organization) throw new Error("Aucune organisation associée à ce compte.");
+  if (!organization) return { error: "Aucune organisation associée à ce compte." };
 
   if (isActive) {
-    await assertCanActivateWorkflow(organization);
+    const limitError = await checkCanActivateWorkflow(organization);
+    if (limitError) return { error: limitError };
   }
 
   const supabase = await createClient();
@@ -60,7 +63,7 @@ export async function toggleWorkflow(workflowId: string, isActive: boolean) {
     .update({ is_active: isActive })
     .eq("id", workflowId)
     .eq("organization_id", organization.id);
-  if (error) throw new Error(error.message);
+  if (error) return { error: error.message };
 
   revalidatePath("/automations");
 }

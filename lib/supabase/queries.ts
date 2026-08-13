@@ -5,6 +5,7 @@ import type {
   AppNotification,
   AppUser,
   CrmConnection,
+  EmailTemplate,
   Lead,
   LeadNote,
   Organization,
@@ -12,6 +13,7 @@ import type {
   Profile,
   ProfileVersion,
   SsoConnection,
+  Webhook,
   Workflow,
 } from "@/lib/supabase/types";
 
@@ -251,6 +253,24 @@ export async function getMyWorkflows(): Promise<Workflow[]> {
     .select("*")
     .order("created_at", { ascending: false });
   return (data as Workflow[]) ?? [];
+}
+
+export async function getEmailTemplates(): Promise<EmailTemplate[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("email_templates")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return (data as EmailTemplate[]) ?? [];
+}
+
+export async function getWebhooks(): Promise<Webhook[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("webhooks")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return (data as Webhook[]) ?? [];
 }
 
 export async function getAnalyticsCounts(profileIds: string[]) {

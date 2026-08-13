@@ -164,6 +164,28 @@ export type WorkflowExecution = {
   created_at: string;
 };
 
+export type EmailTemplate = {
+  id: string;
+  organization_id: string;
+  name: string;
+  subject: string;
+  body: string;
+  variables: string[];
+  created_at: string;
+};
+
+export type Webhook = {
+  id: string;
+  organization_id: string;
+  url: string;
+  events: string[];
+  is_active: boolean;
+  created_at: string;
+};
+
+export const WEBHOOK_EVENTS = ["lead_captured", "card_published", "contact_synced"] as const;
+export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
+
 export type NotificationType =
   | "lead_captured"
   | "card_viewed"

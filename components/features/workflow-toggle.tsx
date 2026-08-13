@@ -17,12 +17,12 @@ export function WorkflowToggle({ id, isActive }: { id: string; isActive: boolean
       disabled={pending}
       onCheckedChange={(checked) =>
         startTransition(async () => {
-          try {
-            await toggleWorkflow(id, checked);
-            router.refresh();
-          } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Échec de la mise à jour");
+          const result = await toggleWorkflow(id, checked);
+          if (result?.error) {
+            toast.error(result.error);
+            return;
           }
+          router.refresh();
         })
       }
     />

@@ -359,9 +359,27 @@ export default async function GuidePage() {
                 ]}
               />
             </Section>
+            <Separator />
+            <Section title="Modèles d'email">
+              <p>
+                Crée des modèles réutilisables (objet + contenu) pour tes relances. Utilise{" "}
+                <code className="font-mono text-xs">{"{{variable}}"}</code> dans le texte — les
+                variables sont détectées automatiquement et listées sous le modèle.
+              </p>
+            </Section>
+            <Separator />
+            <Section title="Webhooks sortants">
+              <p>
+                Reçois un événement HTTP POST sur ton propre serveur (URL en{" "}
+                <code className="font-mono text-xs">https://</code>) à chaque déclencheur choisi :
+                lead capturé, carte publiée, contact synchronisé. Le bouton{" "}
+                <b>Tester</b> envoie un événement factice pour vérifier que ton serveur répond
+                correctement.
+              </p>
+            </Section>
             <Note>
-              Les modèles email, les webhooks sortants et l&apos;historique détaillé
-              d&apos;exécution arrivent avec le moteur de workflow, en cours de finalisation.
+              L&apos;historique détaillé d&apos;exécution des workflows arrive avec le moteur de
+              workflow (Inngest ou Trigger.dev), pas encore choisi.
             </Note>
           </TabsContent>
 

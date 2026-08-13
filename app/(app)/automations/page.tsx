@@ -3,8 +3,15 @@ import { History, Lock, Mail, Webhook, Workflow as WorkflowIcon } from "lucide-r
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateWorkflowDialog } from "@/components/features/create-workflow-dialog";
+import { EmailTemplatesManager } from "@/components/features/email-templates-manager";
+import { WebhooksManager } from "@/components/features/webhooks-manager";
 import { WorkflowToggle } from "@/components/features/workflow-toggle";
-import { getCurrentOrganization, getMyWorkflows } from "@/lib/supabase/queries";
+import {
+  getCurrentOrganization,
+  getEmailTemplates,
+  getMyWorkflows,
+  getWebhooks,
+} from "@/lib/supabase/queries";
 
 export default async function AutomationsPage() {
   const organization = await getCurrentOrganization();
@@ -26,7 +33,11 @@ export default async function AutomationsPage() {
     );
   }
 
-  const workflows = await getMyWorkflows();
+  const [workflows, emailTemplates, webhooks] = await Promise.all([
+    getMyWorkflows(),
+    getEmailTemplates(),
+    getWebhooks(),
+  ]);
 
   return (
     <Tabs
@@ -89,15 +100,11 @@ export default async function AutomationsPage() {
         </TabsContent>
 
         <TabsContent value="wf-emails">
-          <p className="text-sm text-muted-foreground">
-            Les modèles d&apos;email arrivent bientôt.
-          </p>
+          <EmailTemplatesManager templates={emailTemplates} />
         </TabsContent>
 
         <TabsContent value="wf-webhooks">
-          <p className="text-sm text-muted-foreground">
-            Les webhooks sortants arrivent bientôt.
-          </p>
+          <WebhooksManager webhooks={webhooks} />
         </TabsContent>
 
         <TabsContent value="wf-history">

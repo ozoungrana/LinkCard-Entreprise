@@ -27,15 +27,15 @@ export function CreateWorkflowDialog() {
 
   function handleCreate() {
     startTransition(async () => {
-      try {
-        await createWorkflow(name.trim());
-        setOpen(false);
-        setName("");
-        router.refresh();
-        toast.success("Workflow créé");
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Échec de la création");
+      const result = await createWorkflow(name.trim());
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
+      setOpen(false);
+      setName("");
+      router.refresh();
+      toast.success("Workflow créé");
     });
   }
 
