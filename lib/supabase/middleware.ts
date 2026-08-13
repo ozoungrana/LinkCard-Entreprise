@@ -11,6 +11,7 @@ const PROTECTED_PREFIXES = [
   "/admin",
   "/account",
   "/onboarding",
+  "/guide",
 ];
 
 const AUTH_PATHS = ["/login", "/register"];
