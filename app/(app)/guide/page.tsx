@@ -300,6 +300,16 @@ export default async function GuidePage() {
               </p>
             </Section>
             <Separator />
+            <Section title="Ajouter un contact manuellement (terrain)">
+              <p>
+                Depuis <b>Contacts</b>, le bouton <b>Ajouter un contact</b> permet de saisir
+                directement les coordonnées d&apos;une personne rencontrée en personne — nom,
+                entreprise, email, téléphone, notes. Ça fonctionne même sans connexion réseau : la
+                fiche est enregistrée localement sur l&apos;appareil et synchronisée automatiquement
+                dès que la connexion revient.
+              </p>
+            </Section>
+            <Separator />
             <Section title="Pipeline (vue Kanban)">
               <p>
                 Fais glisser un contact d&apos;une colonne à l&apos;autre pour suivre son
@@ -419,12 +429,14 @@ export default async function GuidePage() {
               <p>
                 LinkCard est une application installable (PWA). Une fois visitée, la dernière carte
                 publique consultée reste accessible hors-ligne, ainsi que le téléchargement de la
-                vCard déjà en cache.
+                vCard déjà en cache. L&apos;ajout manuel d&apos;un contact fonctionne aussi
+                hors-ligne : la fiche est enregistrée sur l&apos;appareil et envoyée automatiquement
+                dès que la connexion revient.
               </p>
             </Section>
             <Note>
-              L&apos;écriture/lecture NFC hors-ligne et l&apos;enregistrement local de nouveaux
-              contacts scannés sans réseau ne sont pas encore disponibles.
+              L&apos;écriture/lecture NFC hors-ligne et le scan OCR d&apos;une carte de visite
+              hors-ligne ne sont pas encore disponibles.
             </Note>
           </TabsContent>
 

@@ -41,8 +41,9 @@ const sessions = [
 const offlineChecklist = [
   { label: "Affichage de la dernière carte publique consultée", enabled: true },
   { label: "Téléchargement du contact (vCard) déjà en cache", enabled: true },
+  { label: "Ajout manuel d'un contact, synchronisé au retour du réseau", enabled: true },
   { label: "Écriture et lecture de la puce NFC hors-ligne", enabled: false },
-  { label: "Enregistrement local des nouveaux contacts scannés", enabled: false },
+  { label: "Scan OCR d'une carte de visite hors-ligne", enabled: false },
 ];
 
 function OptRow({ title, desc, defaultOn, locked }: { title: string; desc: string; defaultOn: boolean; locked?: boolean }) {

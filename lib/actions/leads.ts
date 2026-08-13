@@ -2,9 +2,66 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentOrganization } from "@/lib/supabase/queries";
 import type { Lead } from "@/lib/supabase/types";
 
 export type SubmitLeadState = { error?: string; success?: boolean } | undefined;
+
+export type CreateLeadInput = {
+  name: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+};
+
+// Field capture — a rep logging a contact met in person, not tied to a
+// specific card. Returned as {error}/{success} rather than thrown: this is
+// also called from the offline sync flow, which needs to tell failures
+// apart from successes without relying on production error redaction.
+export async function createLeadManually(
+  input: CreateLeadInput
+): Promise<{ error: string } | { success: true; id: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Non authentifié." };
+
+  const organization = await getCurrentOrganization();
+  if (!organization) return { error: "Aucune organisation associée à ce compte." };
+
+  const name = input.name.trim();
+  if (!name) return { error: "Le nom est requis." };
+
+  const leadId = crypto.randomUUID();
+  const { error } = await supabase.from("leads").insert({
+    id: leadId,
+    organization_id: organization.id,
+    captured_by: user.id,
+    name,
+    company: input.company?.trim() || null,
+    email: input.email?.trim() || null,
+    phone: input.phone?.trim() || null,
+    channel: "manuel",
+    consent_given: true,
+  });
+
+  if (error) return { error: error.message };
+
+  if (input.notes?.trim()) {
+    await supabase.from("lead_notes").insert({
+      lead_id: leadId,
+      author_id: user.id,
+      type: "text",
+      content: input.notes.trim(),
+    });
+  }
+
+  revalidatePath("/contacts");
+  revalidatePath("/dashboard");
+  return { success: true, id: leadId };
+}
 
 export async function updateLeadStage(leadId: string, stage: Lead["stage"]) {
   const supabase = await createClient();

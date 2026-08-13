@@ -34,6 +34,7 @@ export const channelLabels: Record<Lead["channel"], string> = {
   lien_direct: "Lien direct",
   ocr: "OCR",
   import_csv: "Import CSV",
+  manuel: "Saisie manuelle",
 };
 
 export function initialsOf(name: string) {

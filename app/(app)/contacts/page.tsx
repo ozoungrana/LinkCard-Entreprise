@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Download, Lock, ScanLine, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { AddLeadDialog } from "@/components/features/add-lead-dialog";
 import { ContactsView } from "@/components/features/contacts-view";
 import { getCurrentOrganization, getMyLeads, type LeadWithNotes } from "@/lib/supabase/queries";
 
@@ -49,10 +50,11 @@ export default async function ContactsPage() {
             <Download />
             Exporter
           </Button>
-          <Button size="sm" disabled>
+          <Button variant="outline" size="sm" disabled>
             <ScanLine />
             Scanner une carte
           </Button>
+          <AddLeadDialog />
         </div>
       </div>
 
