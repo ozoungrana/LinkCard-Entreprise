@@ -63,6 +63,49 @@ export async function createLeadManually(
   return { success: true, id: leadId };
 }
 
+export type ImportLeadRow = {
+  name: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+};
+
+export async function importLeadsCsv(
+  rows: ImportLeadRow[]
+): Promise<{ error: string } | { success: true; imported: number; skipped: number }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Non authentifié." };
+
+  const organization = await getCurrentOrganization();
+  if (!organization) return { error: "Aucune organisation associée à ce compte." };
+
+  const valid = rows.filter((r) => r.name?.trim());
+  const skipped = rows.length - valid.length;
+  if (valid.length === 0) return { error: "Aucune ligne valide (le nom est requis)." };
+
+  const payload = valid.map((r) => ({
+    id: crypto.randomUUID(),
+    organization_id: organization.id,
+    captured_by: user.id,
+    name: r.name.trim(),
+    company: r.company?.trim() || null,
+    email: r.email?.trim() || null,
+    phone: r.phone?.trim() || null,
+    channel: "import_csv" as const,
+    consent_given: true,
+  }));
+
+  const { error } = await supabase.from("leads").insert(payload);
+  if (error) return { error: error.message };
+
+  revalidatePath("/contacts");
+  revalidatePath("/dashboard");
+  return { success: true, imported: valid.length, skipped };
+}
+
 export async function updateLeadStage(leadId: string, stage: Lead["stage"]) {
   const supabase = await createClient();
   const {

@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { Download, Lock, ScanLine, Upload } from "lucide-react";
+import { Lock, ScanLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AddLeadDialog } from "@/components/features/add-lead-dialog";
 import { ContactsView } from "@/components/features/contacts-view";
+import { ExportLeadsButton } from "@/components/features/export-leads-button";
+import { ImportLeadsDialog } from "@/components/features/import-leads-dialog";
 import { getCurrentOrganization, getMyLeads, type LeadWithNotes } from "@/lib/supabase/queries";
 
 // Chapter 10 §2/§4 — Free is capped at 5 captured contacts/month. The
@@ -42,14 +44,8 @@ export default async function ContactsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold font-display">Contacts ({leads.length})</h2>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>
-            <Upload />
-            Importer CSV
-          </Button>
-          <Button variant="outline" size="sm" disabled>
-            <Download />
-            Exporter
-          </Button>
+          <ImportLeadsDialog />
+          <ExportLeadsButton leads={leads} />
           <Button variant="outline" size="sm" disabled>
             <ScanLine />
             Scanner une carte
