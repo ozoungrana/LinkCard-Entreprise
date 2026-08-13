@@ -91,7 +91,11 @@ export type ProfileFormValues = {
   template: string;
 };
 
-export async function updateProfile(profileId: string, values: ProfileFormValues) {
+export async function updateProfile(
+  profileId: string,
+  values: ProfileFormValues,
+  changeSummary = "Mise à jour depuis l'éditeur"
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -116,7 +120,7 @@ export async function updateProfile(profileId: string, values: ProfileFormValues
   await supabase.from("profile_versions").insert({
     profile_id: profileId,
     snapshot: { ...before, ...values },
-    change_summary: "Mise à jour depuis l'éditeur",
+    change_summary: changeSummary,
     created_by: user.id,
   });
 
@@ -125,6 +129,46 @@ export async function updateProfile(profileId: string, values: ProfileFormValues
   revalidatePath("/dashboard");
 
   return { success: true } as const;
+}
+
+const PROFILE_FORM_KEYS = [
+  "full_name",
+  "job_title",
+  "company",
+  "phone",
+  "whatsapp_number",
+  "email",
+  "address",
+  "website_url",
+  "linkedin_url",
+  "calendly_url",
+  "portfolio_url",
+  "brand_primary_color",
+  "font",
+  "template",
+] as const;
+
+export async function restoreProfileVersion(profileId: string, versionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+
+  const { data: version } = await supabase
+    .from("profile_versions")
+    .select("snapshot")
+    .eq("id", versionId)
+    .eq("profile_id", profileId)
+    .single();
+  if (!version) throw new Error("Version introuvable.");
+
+  const snapshot = version.snapshot as Record<string, unknown>;
+  const values = Object.fromEntries(
+    PROFILE_FORM_KEYS.map((key) => [key, (snapshot[key] as string) ?? ""])
+  ) as ProfileFormValues;
+
+  return updateProfile(profileId, values, "Restauré depuis une version précédente");
 }
 
 export async function deleteProfile(profileId: string) {

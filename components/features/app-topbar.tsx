@@ -109,6 +109,7 @@ export function AppTopbar({
         variant="outline"
         size="sm"
         className="hidden gap-2 text-muted-foreground sm:flex"
+        onClick={() => window.dispatchEvent(new Event("toggle-command-palette"))}
       >
         <Search className="size-4" />
         Rechercher…

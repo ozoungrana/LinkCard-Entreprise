@@ -10,6 +10,8 @@ import type {
   Organization,
   OrganizationMember,
   Profile,
+  ProfileVersion,
+  SsoConnection,
   Workflow,
 } from "@/lib/supabase/types";
 
@@ -357,6 +359,17 @@ export async function getAllUsers(): Promise<AppUser[]> {
   return (data as AppUser[]) ?? [];
 }
 
+export async function getProfileVersions(profileId: string): Promise<ProfileVersion[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profile_versions")
+    .select("*")
+    .eq("profile_id", profileId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  return (data as ProfileVersion[]) ?? [];
+}
+
 export async function getCrmConnections(organizationId: string): Promise<CrmConnection[]> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -364,6 +377,15 @@ export async function getCrmConnections(organizationId: string): Promise<CrmConn
     .select("id, organization_id, provider, status, created_at")
     .eq("organization_id", organizationId);
   return (data as CrmConnection[]) ?? [];
+}
+
+export async function getSsoConnections(organizationId: string): Promise<SsoConnection[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("sso_connections")
+    .select("id, organization_id, provider, metadata_url, status, created_at")
+    .eq("organization_id", organizationId);
+  return (data as SsoConnection[]) ?? [];
 }
 
 export async function getMyNotifications(limit = 10): Promise<AppNotification[]> {

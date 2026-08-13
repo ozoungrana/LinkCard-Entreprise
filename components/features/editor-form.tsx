@@ -37,7 +37,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { Profile } from "@/lib/supabase/types";
+import { VersionHistorySheet } from "@/components/features/version-history-sheet";
+import type { Profile, ProfileVersion } from "@/lib/supabase/types";
 
 const swatches = ["#2563EB", "#06B6D4", "#DB2777", "#111827", "#22C55E", "#EA580C"];
 
@@ -53,7 +54,13 @@ function initialsOf(name: string) {
   );
 }
 
-export function EditorForm({ profile }: { profile: Profile }) {
+export function EditorForm({
+  profile,
+  versions,
+}: {
+  profile: Profile;
+  versions: ProfileVersion[];
+}) {
   const [values, setValues] = useState<ProfileFormValues>({
     full_name: profile.full_name ?? "",
     job_title: profile.job_title ?? "",
@@ -75,6 +82,7 @@ export function EditorForm({ profile }: { profile: Profile }) {
   const [avatarPending, setAvatarPending] = useState(false);
   const [pending, startTransition] = useTransition();
   const [publishPending, startPublishTransition] = useTransition();
+  const [historyOpen, setHistoryOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -397,7 +405,7 @@ export function EditorForm({ profile }: { profile: Profile }) {
                 : "Publier la carte"}
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" disabled>
+            <Button variant="outline" className="flex-1" onClick={() => setHistoryOpen(true)}>
               <History />
               Historique
             </Button>
@@ -408,6 +416,13 @@ export function EditorForm({ profile }: { profile: Profile }) {
           </div>
         </div>
       </Card>
+
+      <VersionHistorySheet
+        profileId={profile.id}
+        versions={versions}
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+      />
     </div>
   );
 }

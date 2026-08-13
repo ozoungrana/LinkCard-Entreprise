@@ -1,6 +1,7 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/features/app-sidebar";
 import { AppTopbar } from "@/components/features/app-topbar";
+import { CommandPalette } from "@/components/features/command-palette";
 import {
   getCurrentOrganization,
   getCurrentUser,
@@ -43,6 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <AppTopbar user={sidebarUser} notifications={notifications} />
         <div className="flex-1 overflow-auto p-6">{children}</div>
       </SidebarInset>
+      <CommandPalette />
     </SidebarProvider>
   );
 }

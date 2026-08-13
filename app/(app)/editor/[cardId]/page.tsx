@@ -11,7 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getMyProfileById } from "@/lib/supabase/queries";
+import { getMyProfileById, getProfileVersions } from "@/lib/supabase/queries";
 
 export default async function EditorPage({
   params,
@@ -20,6 +20,7 @@ export default async function EditorPage({
 }) {
   const { cardId } = await params;
   const profile = await getMyProfileById(cardId);
+  const versions = profile ? await getProfileVersions(profile.id) : [];
 
   if (!profile) {
     return (
@@ -63,7 +64,7 @@ export default async function EditorPage({
         </DropdownMenu>
       </div>
 
-      <EditorForm profile={profile} />
+      <EditorForm profile={profile} versions={versions} />
     </div>
   );
 }

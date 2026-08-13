@@ -19,6 +19,26 @@ export type CrmConnection = {
   created_at: string;
 };
 
+export type ProfileVersion = {
+  id: string;
+  profile_id: string;
+  snapshot: Record<string, unknown>;
+  change_summary: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type SsoProvider = "google_workspace" | "microsoft_entra_id" | "okta";
+
+export type SsoConnection = {
+  id: string;
+  organization_id: string;
+  provider: SsoProvider;
+  metadata_url: string | null;
+  status: string;
+  created_at: string;
+};
+
 export type Organization = {
   id: string;
   name: string;

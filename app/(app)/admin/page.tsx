@@ -10,14 +10,21 @@ import {
   getCrmConnections,
   getCurrentOrganization,
   getOrganizationMembers,
+  getSsoConnections,
 } from "@/lib/supabase/queries";
-import type { CrmProvider } from "@/lib/supabase/types";
+import type { CrmProvider, SsoProvider } from "@/lib/supabase/types";
 
 const CRM_PROVIDERS: { value: CrmProvider; label: string }[] = [
   { value: "hubspot", label: "HubSpot" },
   { value: "salesforce", label: "Salesforce" },
   { value: "pipedrive", label: "Pipedrive" },
   { value: "zoho", label: "Zoho" },
+];
+
+const SSO_PROVIDERS: { value: SsoProvider; label: string }[] = [
+  { value: "google_workspace", label: "Google Workspace" },
+  { value: "microsoft_entra_id", label: "Microsoft Entra ID" },
+  { value: "okta", label: "Okta" },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -54,9 +61,10 @@ export default async function AdminPage() {
     );
   }
 
-  const [members, crmConnections] = await Promise.all([
+  const [members, crmConnections, ssoConnections] = await Promise.all([
     getOrganizationMembers(organization.id),
     getCrmConnections(organization.id),
+    getSsoConnections(organization.id),
   ]);
 
   return (
@@ -160,9 +168,37 @@ export default async function AdminPage() {
           </p>
         </TabsContent>
 
-        <TabsContent value="sso">
-          <p className="text-sm text-muted-foreground">
-            Le SSO et le provisioning SCIM (via WorkOS) arrivent bientôt.
+        <TabsContent value="sso" className="flex flex-col gap-4">
+          <div>
+            <h3 className="text-sm font-semibold">SSO & Provisioning</h3>
+            <p className="text-xs text-muted-foreground">
+              Connecte ton fournisseur d&apos;identité pour l&apos;authentification unique et le
+              provisioning automatique des comptes.
+            </p>
+          </div>
+          {SSO_PROVIDERS.map((provider) => {
+            const connection = ssoConnections.find((c) => c.provider === provider.value);
+            const connected = connection?.status === "connected";
+            return (
+              <div key={provider.value} className="flex items-center gap-3 rounded-lg border p-3">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                  <ShieldCheck className="size-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">{provider.label}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {connected ? "Connecté" : "Non connecté"}
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" disabled>
+                  {connected ? "Déconnecter" : "Connecter"}
+                </Button>
+              </div>
+            );
+          })}
+          <p className="text-xs text-muted-foreground">
+            Le SSO (SAML) et le provisioning SCIM passent par WorkOS — désactivé tant qu&apos;une
+            clé API WorkOS n&apos;est pas configurée.
           </p>
         </TabsContent>
       </Card>
