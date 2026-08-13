@@ -6,6 +6,7 @@ import {
   Workflow,
   Building2,
   Settings,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -38,6 +39,9 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Compte",
-    items: [{ title: "Mon compte", href: "/account", icon: Settings }],
+    items: [
+      { title: "Guide utilisateur", href: "/guide", icon: BookOpen },
+      { title: "Mon compte", href: "/account", icon: Settings },
+    ],
   },
 ];
