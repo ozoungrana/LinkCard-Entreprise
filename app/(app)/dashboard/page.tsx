@@ -4,6 +4,7 @@ import { Download, Pencil, Plus, Share2, TrendingUp, Users } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ActiveCardSelect } from "@/components/features/active-card-select";
 import { CardQrThumbnail, ShareCardDialog } from "@/components/features/share-card-dialog";
 import { getAnalyticsCounts, getCurrentUser, getMyLeads, getMyProfiles } from "@/lib/supabase/queries";
 import { buildVCardHref, vCardFilename } from "@/lib/vcard";
@@ -27,15 +28,20 @@ function timeAgo(iso: string) {
   return `il y a ${days}j`;
 }
 
-export default async function DashboardPage() {
-  const [user, profiles, leads] = await Promise.all([
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ card?: string }>;
+}) {
+  const [{ card: cardId }, user, profiles, leads] = await Promise.all([
+    searchParams,
     getCurrentUser(),
     getMyProfiles(),
     getMyLeads(),
   ]);
 
   const counts = await getAnalyticsCounts(profiles.map((p) => p.id));
-  const activeCard = profiles[0] ?? null;
+  const activeCard = (cardId ? profiles.find((p) => p.id === cardId) : null) ?? profiles[0] ?? null;
   const recentLeads = leads.slice(0, 4);
   const firstName = user?.name?.split(" ")[0] ?? "là";
 
@@ -118,13 +124,21 @@ export default async function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader className="flex-row items-center justify-between">
+          <CardHeader className="flex-row items-center justify-between gap-2">
             <CardTitle>Carte active</CardTitle>
-            {activeCard && (
-              <Link href={`/editor/${activeCard.id}`} className="text-xs text-primary hover:underline">
-                Éditer
-              </Link>
-            )}
+            <div className="flex items-center gap-3">
+              {profiles.length > 1 && activeCard && (
+                <ActiveCardSelect
+                  cards={profiles.map((p) => ({ id: p.id, name: p.full_name ?? "Carte sans nom" }))}
+                  activeId={activeCard.id}
+                />
+              )}
+              {activeCard && (
+                <Link href={`/editor/${activeCard.id}`} className="text-xs text-primary hover:underline">
+                  Éditer
+                </Link>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {activeCard ? (
