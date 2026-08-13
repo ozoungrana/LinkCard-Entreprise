@@ -1,17 +1,7 @@
 import { headers } from "next/headers";
-import {
-  Calendar,
-  FileText,
-  Link2,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Phone,
-  Search,
-  UserPlus,
-} from "lucide-react";
+import { Calendar, FileText, Link2, MessageCircle, Search } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CardFace } from "@/components/features/card-face";
 import { ReciprocalForm } from "@/components/features/reciprocal-form";
 import { getPublishedProfileBySlug, recordProfileView } from "@/lib/supabase/queries";
 import type { Profile } from "@/lib/supabase/types";
@@ -25,18 +15,6 @@ function parseUserAgent(ua: string) {
   else if (/Firefox\//.test(ua)) browser = "Firefox";
   else if (/Safari\//.test(ua) && !/Chrome|CriOS/.test(ua)) browser = "Safari";
   return { device, browser };
-}
-
-function initialsOf(name: string) {
-  return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "?"
-  );
 }
 
 function buildVCardHref(profile: Profile) {
@@ -114,95 +92,26 @@ export default async function PublicProfilePage({
   return (
     <main className="flex min-h-screen flex-col items-center bg-muted/30 px-4 py-10">
       <div className="w-full max-w-sm overflow-hidden rounded-2xl border bg-card shadow-sm">
-        <div
-          className="flex h-32 items-end p-4"
-          style={{
-            background: `linear-gradient(135deg, ${profile.brand_primary_color ?? "#2563EB"}, ${
-              profile.brand_primary_color ?? "#3B82F6"
-            }aa)`,
-          }}
-        >
-          <Avatar className="size-16 border-4 border-card">
-            {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt="" />}
-            <AvatarFallback className="bg-white/20 text-lg text-white">
-              {initialsOf(displayName)}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-        <div className="flex flex-col items-center gap-1 px-5 pb-6 pt-4 text-center">
-          <h1 className="font-display text-xl font-semibold">{displayName}</h1>
-          {profile.job_title && <p className="text-sm text-muted-foreground">{profile.job_title}</p>}
-          {profile.company && <p className="text-sm text-muted-foreground">{profile.company}</p>}
-
-          <div className="mt-4 grid w-full grid-cols-4 gap-2">
-            <a
-              href={profile.phone ? `tel:${profile.phone}` : undefined}
-              aria-disabled={!profile.phone}
-              className="flex flex-col items-center gap-1 rounded-lg bg-muted py-2.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/70 aria-disabled:pointer-events-none aria-disabled:opacity-40"
-            >
-              <Phone className="size-4" />
-              Appeler
-            </a>
-            <a
-              href={profile.email ? `mailto:${profile.email}` : undefined}
-              aria-disabled={!profile.email}
-              className="flex flex-col items-center gap-1 rounded-lg bg-muted py-2.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/70 aria-disabled:pointer-events-none aria-disabled:opacity-40"
-            >
-              <Mail className="size-4" />
-              Email
-            </a>
-            <a
-              href={profile.website_url ?? undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-disabled={!profile.website_url}
-              className="flex flex-col items-center gap-1 rounded-lg bg-muted py-2.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/70 aria-disabled:pointer-events-none aria-disabled:opacity-40"
-            >
-              <Link2 className="size-4" />
-              Site
-            </a>
-            <a
-              href={
-                profile.address
-                  ? `https://maps.google.com/?q=${encodeURIComponent(profile.address)}`
-                  : undefined
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-disabled={!profile.address}
-              className="flex flex-col items-center gap-1 rounded-lg bg-muted py-2.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/70 aria-disabled:pointer-events-none aria-disabled:opacity-40"
-            >
-              <MapPin className="size-4" />
-              Itinéraire
-            </a>
-          </div>
-
-          {links.length > 0 && (
-            <div className="mt-4 flex w-full flex-col gap-2">
-              {links.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted/50"
-                >
-                  <link.icon className="size-4 text-muted-foreground" />
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          )}
-
-          <a
-            href={buildVCardHref(profile)}
-            download={`${displayName.replace(/\s+/g, "-")}.vcf`}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-          >
-            <UserPlus className="size-4" />
-            Enregistrer le contact
-          </a>
-        </div>
+        <CardFace
+          name={displayName}
+          jobTitle={profile.job_title}
+          company={profile.company}
+          avatarUrl={profile.avatar_url}
+          primaryColor={profile.brand_primary_color ?? "#2563EB"}
+          font={profile.font}
+          template={profile.template}
+          phoneHref={profile.phone ? `tel:${profile.phone}` : undefined}
+          emailHref={profile.email ? `mailto:${profile.email}` : undefined}
+          siteHref={profile.website_url ?? undefined}
+          addressHref={
+            profile.address ? `https://maps.google.com/?q=${encodeURIComponent(profile.address)}` : undefined
+          }
+          extraLinks={links}
+          ctaLabel="Enregistrer le contact"
+          ctaHref={buildVCardHref(profile)}
+          ctaDownload={`${displayName.replace(/\s+/g, "-")}.vcf`}
+          interactive
+        />
       </div>
 
       <div className="mt-8 w-full max-w-sm rounded-2xl border bg-card p-5">

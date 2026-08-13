@@ -7,15 +7,12 @@ import {
   Calendar,
   Camera,
   Check,
+  FileText,
   Globe,
   History,
   Link2,
-  Mail,
-  MapPin,
   MessageCircle,
-  Phone,
   Save,
-  User,
 } from "lucide-react";
 
 import {
@@ -38,6 +35,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VersionHistorySheet } from "@/components/features/version-history-sheet";
+import { CardFace, type ExtraLink } from "@/components/features/card-face";
 import type { Profile, ProfileVersion } from "@/lib/supabase/types";
 
 const swatches = ["#2563EB", "#06B6D4", "#DB2777", "#111827", "#22C55E", "#EA580C"];
@@ -275,64 +273,43 @@ export function EditorForm({
       {/* Center: live preview */}
       <div className="flex flex-col items-center gap-3">
         <div className="w-full max-w-[280px] overflow-hidden rounded-[2rem] border-8 border-gray-900 bg-background shadow-lg dark:border-gray-700">
-          <div
-            className="h-40 p-4"
-            style={{
-              background: `linear-gradient(135deg, ${values.brand_primary_color}, ${values.brand_primary_color}aa)`,
-            }}
-          >
-            <Avatar className="size-14 border-2 border-white/50">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
-              <AvatarFallback className="bg-white/20 text-lg text-white">
-                {initialsOf(previewName)}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-          <div className="flex flex-col items-center gap-1 px-4 pb-4 pt-3 text-center">
-            <div className="font-display text-lg font-semibold">{previewName}</div>
-            <div className="text-sm text-muted-foreground">{values.job_title}</div>
-            <div className="text-xs text-muted-foreground">{values.company}</div>
-
-            <div className="mt-3 grid w-full grid-cols-4 gap-2">
-              {[
-                { icon: Phone, label: "Appeler" },
-                { icon: Mail, label: "Email" },
-                { icon: User, label: "Site" },
-                { icon: MapPin, label: "Itinéraire" },
-              ].map((a) => (
-                <div
-                  key={a.label}
-                  className="flex flex-col items-center gap-1 rounded-lg bg-muted py-2 text-[10px] text-muted-foreground"
-                >
-                  <a.icon className="size-4" />
-                  {a.label}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 flex w-full flex-col gap-2">
-              {values.whatsapp_number && (
-                <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
-                  <MessageCircle className="size-4" />
-                  WhatsApp
-                </div>
-              )}
-              {values.linkedin_url && (
-                <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
-                  <Link2 className="size-4" />
-                  LinkedIn
-                </div>
-              )}
-              {values.calendly_url && (
-                <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
-                  <Calendar className="size-4" />
-                  Prendre rendez-vous
-                </div>
-              )}
-            </div>
-
-            <Button className="mt-3 w-full">Enregistrer le contact</Button>
-          </div>
+          <CardFace
+            name={previewName}
+            jobTitle={values.job_title}
+            company={values.company}
+            avatarUrl={avatarUrl}
+            primaryColor={values.brand_primary_color}
+            font={values.font}
+            template={values.template}
+            phoneHref={values.phone ? `tel:${values.phone}` : undefined}
+            emailHref={values.email ? `mailto:${values.email}` : undefined}
+            siteHref={values.website_url || undefined}
+            addressHref={
+              values.address ? `https://maps.google.com/?q=${encodeURIComponent(values.address)}` : undefined
+            }
+            extraLinks={
+              [
+                values.whatsapp_number && {
+                  icon: MessageCircle,
+                  label: "WhatsApp",
+                  href: `https://wa.me/${values.whatsapp_number.replace(/[^0-9]/g, "")}`,
+                },
+                values.linkedin_url && { icon: Link2, label: "LinkedIn", href: values.linkedin_url },
+                values.calendly_url && {
+                  icon: Calendar,
+                  label: "Prendre rendez-vous",
+                  href: values.calendly_url,
+                },
+                values.portfolio_url && {
+                  icon: FileText,
+                  label: "Télécharger la brochure",
+                  href: values.portfolio_url,
+                },
+              ].filter(Boolean) as ExtraLink[]
+            }
+            ctaLabel="Enregistrer le contact"
+            interactive={false}
+          />
         </div>
         <p className="text-xs text-muted-foreground">
           Aperçu en direct · <b>{previewName}</b>
