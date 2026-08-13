@@ -74,13 +74,13 @@ export function OnboardingWizard({ userName }: { userName: string }) {
 
   function goToStep2() {
     startTransition(async () => {
-      try {
-        const { id, slug } = await createProfileForOnboarding(fullName || "Ma carte", type);
-        setProfile({ id, slug });
-        setStep(2);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Impossible de créer la carte");
+      const result = await createProfileForOnboarding(fullName || "Ma carte", type);
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
       }
+      setProfile({ id: result.id, slug: result.slug });
+      setStep(2);
     });
   }
 

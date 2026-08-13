@@ -78,16 +78,8 @@ export function CreateCardDialog() {
             disabled={!name.trim() || pending}
             onClick={() =>
               startTransition(async () => {
-                try {
-                  await createProfile(name.trim(), type);
-                } catch (e) {
-                  // Next's redirect() throws a tagged error to drive navigation —
-                  // let it propagate instead of treating it as a real failure.
-                  if (e && typeof e === "object" && "digest" in e && String(e.digest).startsWith("NEXT_REDIRECT")) {
-                    throw e;
-                  }
-                  toast.error(e instanceof Error ? e.message : "Échec de la création");
-                }
+                const result = await createProfile(name.trim(), type);
+                if (result?.error) toast.error(result.error);
               })
             }
           >

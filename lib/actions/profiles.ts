@@ -17,7 +17,14 @@ function slugify(input: string) {
   );
 }
 
-async function createProfileRow(name: string, type: string) {
+type CreateProfileResult = { id: string; slug: string } | { error: string };
+
+// Server Actions have their thrown-error messages redacted in production
+// builds (Next.js strips them to a generic digest for security), so
+// business-facing errors here are returned, not thrown — redirect() is the
+// only exception, since it's Next's own control-flow throw and isn't
+// affected by that redaction.
+async function createProfileRow(name: string, type: string): Promise<CreateProfileResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,7 +32,7 @@ async function createProfileRow(name: string, type: string) {
   if (!user) redirect("/login");
 
   const organization = await getCurrentOrganization();
-  if (!organization) throw new Error("Aucune organisation associée à ce compte.");
+  if (!organization) return { error: "Aucune organisation associée à ce compte." };
 
   // Chapter 10 §2 — Free is capped at 1 active card.
   if (organization.plan === "free") {
@@ -35,9 +42,9 @@ async function createProfileRow(name: string, type: string) {
       .eq("organization_id", organization.id)
       .is("deleted_at", null);
     if ((count ?? 0) >= 1) {
-      throw new Error(
-        "Le plan Free est limité à 1 carte active. Passe à Pro pour créer des cartes illimitées."
-      );
+      return {
+        error: "Le plan Free est limité à 1 carte active. Passe à Pro pour créer des cartes illimitées.",
+      };
     }
   }
 
@@ -56,16 +63,17 @@ async function createProfileRow(name: string, type: string) {
     .single();
 
   if (error || !data) {
-    throw new Error(error?.message ?? "Impossible de créer la carte.");
+    return { error: error?.message ?? "Impossible de créer la carte." };
   }
 
   revalidatePath("/cards");
   return data as { id: string; slug: string };
 }
 
-export async function createProfile(name: string, type: string) {
-  const { id } = await createProfileRow(name, type);
-  redirect(`/editor/${id}`);
+export async function createProfile(name: string, type: string): Promise<{ error: string } | undefined> {
+  const result = await createProfileRow(name, type);
+  if ("error" in result) return result;
+  redirect(`/editor/${result.id}`);
 }
 
 // Used by the onboarding wizard, which drives its own step navigation
