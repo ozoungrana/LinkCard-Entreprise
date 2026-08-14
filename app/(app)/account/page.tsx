@@ -268,9 +268,24 @@ export default async function AccountPage() {
               <div className="text-xs text-muted-foreground">
                 <b>{plan.price}</b> {plan.period} · facturation mensuelle
               </div>
+              {organization?.payment_provider === "cinetpay" && organization.plan_expires_at && (
+                <div className="mt-1 text-xs text-warning">
+                  Payé via Mobile Money · accès valide jusqu&apos;au{" "}
+                  {new Date(organization.plan_expires_at).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </div>
+              )}
             </div>
             {organization?.plan === "free" || !organization ? (
               <UpgradePlanDialog />
+            ) : organization.payment_provider === "cinetpay" ? (
+              <UpgradePlanDialog
+                defaultMethod="cinetpay"
+                trigger={<Button variant="outline">Renouveler (Mobile Money)</Button>}
+              />
             ) : (
               <div className="flex flex-col items-end gap-2">
                 <ManageBillingButton />
@@ -299,18 +314,36 @@ export default async function AccountPage() {
             ))}
           </div>
 
-          {organization?.plan !== "free" && (
+          {organization?.plan !== "free" && organization?.payment_provider === "cinetpay" ? (
             <>
               <Separator />
               <div>
                 <h3 className="mb-2 text-sm font-semibold">Moyen de paiement & factures</h3>
                 <p className="mb-3 text-xs text-muted-foreground">
-                  Géré de façon sécurisée par Stripe — mets à jour ta carte, télécharge tes factures ou
-                  annule ton abonnement.
+                  Payé via Mobile Money (CinetPay) — pas de reconduction automatique. Renouvelle
+                  avant l&apos;échéance ci-dessus pour garder ton plan actif ; tu recevras une
+                  notification quelques jours avant.
                 </p>
-                <ManageBillingButton />
+                <UpgradePlanDialog
+                  defaultMethod="cinetpay"
+                  trigger={<Button variant="outline">Renouveler (Mobile Money)</Button>}
+                />
               </div>
             </>
+          ) : (
+            organization?.plan !== "free" && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold">Moyen de paiement & factures</h3>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Géré de façon sécurisée par Stripe — mets à jour ta carte, télécharge tes
+                    factures ou annule ton abonnement.
+                  </p>
+                  <ManageBillingButton />
+                </div>
+              </>
+            )
           )}
         </TabsContent>
       </Card>

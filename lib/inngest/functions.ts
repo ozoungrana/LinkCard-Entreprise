@@ -103,3 +103,70 @@ export const processLeadCaptured = inngest.createFunction(
     return { workflowsProcessed: workflows.length };
   }
 );
+
+// CinetPay grants a plan for a fixed period per payment rather than an
+// auto-renewing subscription (see app/api/webhooks/cinetpay/route.ts) — this
+// daily cron closes that loop: downgrade orgs whose period has lapsed, and
+// remind admins of orgs expiring soon so they can pay again before that
+// happens.
+const REMINDER_WINDOW_DAYS = 3;
+
+export const checkCinetpayExpirations = inngest.createFunction(
+  { id: "check-cinetpay-expirations", triggers: { cron: "0 8 * * *" } },
+  async ({ step }) => {
+    const downgraded = await step.run("downgrade-expired", async () => {
+      const admin = createAdminClient();
+      const { data: expired } = await admin
+        .from("organizations")
+        .select("id")
+        .eq("payment_provider", "cinetpay")
+        .lt("plan_expires_at", new Date().toISOString());
+
+      for (const org of expired ?? []) {
+        await admin
+          .from("organizations")
+          .update({ plan: "free", seats_limit: 1, plan_expires_at: null })
+          .eq("id", org.id);
+      }
+      return expired?.length ?? 0;
+    });
+
+    const reminded = await step.run("notify-expiring-soon", async () => {
+      const admin = createAdminClient();
+      const windowEnd = new Date(
+        Date.now() + REMINDER_WINDOW_DAYS * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      const { data: expiringSoon } = await admin
+        .from("organizations")
+        .select("id, name, plan")
+        .eq("payment_provider", "cinetpay")
+        .gte("plan_expires_at", new Date().toISOString())
+        .lt("plan_expires_at", windowEnd);
+
+      let count = 0;
+      for (const org of expiringSoon ?? []) {
+        const { data: admins } = await admin
+          .from("organization_members")
+          .select("user_id")
+          .eq("organization_id", org.id)
+          .eq("status", "active")
+          .in("role", ["org_admin", "team_admin"]);
+
+        for (const member of admins ?? []) {
+          await admin.from("notifications").insert({
+            user_id: member.user_id,
+            type: "reminder_due",
+            payload: {
+              message: `Ton abonnement ${org.plan === "business" ? "Business" : "Pro"} expire bientôt — renouvelle-le via Mobile Money pour ne pas repasser en Free.`,
+            },
+          });
+          count += 1;
+        }
+      }
+      return count;
+    });
+
+    return { downgraded, reminded };
+  }
+);

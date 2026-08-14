@@ -51,6 +51,21 @@ export type Organization = {
   layout_locked: boolean;
   is_personal: boolean;
   stripe_customer_id: string | null;
+  plan_expires_at: string | null;
+  payment_provider: "stripe" | "cinetpay" | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CinetpayTransaction = {
+  id: string;
+  organization_id: string;
+  transaction_id: string;
+  plan: OrgPlan;
+  seats: number;
+  amount: number;
+  currency: string;
+  status: "pending" | "accepted" | "refused" | "cancelled";
   created_at: string;
   updated_at: string;
 };
