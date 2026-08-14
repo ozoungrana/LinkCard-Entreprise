@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Bell, Moon, Search, Sun } from "lucide-react";
+import { Bell, Palette, Search } from "lucide-react";
 
 import { logout } from "@/lib/actions/auth";
 import { markAllNotificationsRead, markNotificationRead } from "@/lib/actions/notifications";
@@ -16,6 +16,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -24,6 +26,16 @@ import { navGroups } from "@/lib/nav";
 import type { AppNotification } from "@/lib/supabase/types";
 
 const allItems = navGroups.flatMap((g) => g.items);
+
+const THEME_OPTIONS = [
+  { value: "system", label: "Système" },
+  { value: "light", label: "Clair" },
+  { value: "dark", label: "Sombre" },
+  { value: "ocean", label: "Océan" },
+  { value: "amethyst", label: "Améthyste" },
+  { value: "midnight", label: "Minuit" },
+  { value: "high-contrast", label: "Contraste élevé" },
+];
 
 function initialsOf(input: string) {
   return (
@@ -116,15 +128,24 @@ export function AppTopbar({
         <kbd className="ml-2 rounded border bg-muted px-1.5 font-mono text-[10px]">⌘K</kbd>
       </Button>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Changer de thème"
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      >
-        <Sun className="size-4 scale-100 dark:scale-0" />
-        <Moon className="absolute size-4 scale-0 dark:scale-100" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label="Changer de thème">
+            <Palette className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Thème</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+            {THEME_OPTIONS.map((option) => (
+              <DropdownMenuRadioItem key={option.value} value={option.value}>
+                {option.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
