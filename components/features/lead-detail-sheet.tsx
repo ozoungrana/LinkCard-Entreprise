@@ -1,7 +1,22 @@
 "use client";
 
-import { Calendar, Mail, MapPin, Phone, Upload } from "lucide-react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Calendar, Mail, MapPin, Phone, Trash2, Upload } from "lucide-react";
 
+import { deleteLead } from "@/lib/actions/leads";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -16,6 +31,25 @@ export function LeadDetailSheet({
   lead: LeadWithNotes | null;
   onOpenChange: (open: boolean) => void;
 }) {
+  const [pending, startTransition] = useTransition();
+  const [alertOpen, setAlertOpen] = useState(false);
+  const router = useRouter();
+
+  function submitDelete() {
+    if (!lead) return;
+    startTransition(async () => {
+      const result = await deleteLead(lead.id);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Contact supprimé");
+      setAlertOpen(false);
+      onOpenChange(false);
+      router.refresh();
+    });
+  }
+
   return (
     <Sheet open={!!lead} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -91,6 +125,32 @@ export function LeadDetailSheet({
                   <Upload />
                   Synchroniser vers le CRM
                 </Button>
+
+                <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="text-danger hover:text-danger">
+                      <Trash2 />
+                      Supprimer le contact
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer « {lead.name} » ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est définitive. Les notes associées à ce contact seront
+                        supprimées aussi.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction asChild>
+                        <Button variant="destructive" disabled={pending} onClick={submitDelete}>
+                          {pending ? "Suppression…" : "Supprimer définitivement"}
+                        </Button>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </>

@@ -126,6 +126,28 @@ export async function importLeadsCsv(
   return { success: true, imported: valid.length, skipped };
 }
 
+export async function deleteLead(leadId: string): Promise<{ error: string } | undefined> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Non authentifié." };
+
+  // Delete is gated to org admins by RLS (org_admins_can_delete_leads); a
+  // member without that role matches zero rows rather than erroring, so the
+  // empty return is the only signal to tell "not found" from "not allowed".
+  const { data, error } = await supabase.from("leads").delete().eq("id", leadId).select("id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) {
+    return {
+      error: "Seuls les administrateurs de l'organisation peuvent supprimer un contact.",
+    };
+  }
+
+  revalidatePath("/contacts");
+  revalidatePath("/dashboard");
+}
+
 export async function updateLeadStage(leadId: string, stage: Lead["stage"]) {
   const supabase = await createClient();
   const {
