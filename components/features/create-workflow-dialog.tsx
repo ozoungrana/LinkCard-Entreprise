@@ -51,7 +51,8 @@ export function CreateWorkflowDialog() {
         <DialogHeader>
           <DialogTitle>Nouveau workflow</DialogTitle>
           <DialogDescription>
-            Donne-lui un nom. Le déclencheur et les actions seront configurables prochainement.
+            Donne-lui un nom. Le déclencheur est fixé sur « lead capturé » — tu pourras ajouter des
+            étapes juste après.
           </DialogDescription>
         </DialogHeader>
         <Field>

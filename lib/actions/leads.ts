@@ -3,7 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrganization } from "@/lib/supabase/queries";
+import { inngest } from "@/lib/inngest/client";
 import type { Lead } from "@/lib/supabase/types";
+
+// Never let workflow-trigger delivery block or fail a lead capture — the
+// engine (and its INNGEST_EVENT_KEY) may not be configured yet, and even
+// when it is, this is a fire-and-forget side effect, not the source of truth.
+function notifyLeadCaptured(data: {
+  leadId: string;
+  organizationId: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+}) {
+  inngest.send({ name: "lead/captured", data }).catch(() => {});
+}
 
 export type SubmitLeadState = { error?: string; success?: boolean } | undefined;
 
@@ -35,14 +50,17 @@ export async function createLeadManually(
   if (!name) return { error: "Le nom est requis." };
 
   const leadId = crypto.randomUUID();
+  const company = input.company?.trim() || null;
+  const email = input.email?.trim() || null;
+  const phone = input.phone?.trim() || null;
   const { error } = await supabase.from("leads").insert({
     id: leadId,
     organization_id: organization.id,
     captured_by: user.id,
     name,
-    company: input.company?.trim() || null,
-    email: input.email?.trim() || null,
-    phone: input.phone?.trim() || null,
+    company,
+    email,
+    phone,
     channel: "manuel",
     consent_given: true,
   });
@@ -57,6 +75,8 @@ export async function createLeadManually(
       content: input.notes.trim(),
     });
   }
+
+  notifyLeadCaptured({ leadId, organizationId: organization.id, name, company, email, phone });
 
   revalidatePath("/contacts");
   revalidatePath("/dashboard");
@@ -155,6 +175,25 @@ export async function submitReciprocalLead(
 
   if (error) {
     return { error: "Échec de l'envoi, réessaie." };
+  }
+
+  // Public profile SELECT is allowed for anonymous visitors, so this lookup
+  // works without a session; if it fails for any reason, just skip the
+  // workflow trigger rather than affecting the lead submission.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("organization_id")
+    .eq("id", profileId)
+    .single();
+  if (profile?.organization_id) {
+    notifyLeadCaptured({
+      leadId,
+      organizationId: profile.organization_id,
+      name,
+      company: null,
+      email,
+      phone: phone || null,
+    });
   }
 
   if (message) {

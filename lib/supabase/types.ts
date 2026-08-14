@@ -164,6 +164,22 @@ export type WorkflowExecution = {
   created_at: string;
 };
 
+export type WorkflowActionType =
+  | "create_crm_contact"
+  | "send_email"
+  | "notify_slack"
+  | "notify_teams"
+  | "webhook_call"
+  | "wait";
+
+export type WorkflowStep = {
+  id: string;
+  workflow_id: string;
+  position: number;
+  action_type: WorkflowActionType;
+  config: Record<string, unknown>;
+};
+
 export type EmailTemplate = {
   id: string;
   organization_id: string;

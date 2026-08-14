@@ -15,6 +15,8 @@ import type {
   SsoConnection,
   Webhook,
   Workflow,
+  WorkflowExecution,
+  WorkflowStep,
 } from "@/lib/supabase/types";
 
 export async function getCurrentUser(): Promise<AppUser | null> {
@@ -246,13 +248,29 @@ export async function getMyLeads(): Promise<LeadWithNotes[]> {
   return (data as LeadWithNotes[]) ?? [];
 }
 
-export async function getMyWorkflows(): Promise<Workflow[]> {
+export type WorkflowWithSteps = Workflow & { workflow_steps: WorkflowStep[] };
+
+export async function getMyWorkflows(): Promise<WorkflowWithSteps[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("workflows")
-    .select("*")
+    .select("*, workflow_steps(*)")
     .order("created_at", { ascending: false });
-  return (data as Workflow[]) ?? [];
+  return (data as WorkflowWithSteps[]) ?? [];
+}
+
+export type WorkflowExecutionWithWorkflow = WorkflowExecution & {
+  workflow: { name: string } | null;
+};
+
+export async function getWorkflowExecutions(): Promise<WorkflowExecutionWithWorkflow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workflow_executions")
+    .select("*, workflow:workflows(name)")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  return (data as WorkflowExecutionWithWorkflow[]) ?? [];
 }
 
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {

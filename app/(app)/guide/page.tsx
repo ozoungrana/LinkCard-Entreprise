@@ -347,17 +347,29 @@ export default async function GuidePage() {
           <TabsContent value="automatisations" className="flex flex-col gap-6">
             <Section title="Workflows">
               <p>
-                Automatise ce qui se passe après un événement (ex. un contact capturé) : créer une
-                notification, envoyer un email, synchroniser vers un CRM. Le plan Pro permet 1
-                workflow actif à la fois ; Business et Enterprise n&apos;ont pas de limite.
+                Un workflow se déclenche automatiquement à chaque contact capturé et exécute ses
+                étapes dans l&apos;ordre. Le plan Pro permet 1 workflow actif à la fois ; Business
+                et Enterprise n&apos;ont pas de limite.
               </p>
               <Steps
                 items={[
-                  "Va dans Automatisations → Mes workflows.",
-                  "Clique sur Créer un workflow, choisis le déclencheur.",
-                  "Active-le avec l'interrupteur — tu peux le désactiver à tout moment.",
+                  "Va dans Automatisations → Mes workflows, clique sur Créer un workflow.",
+                  "Sous le workflow créé, clique sur Ajouter une étape.",
+                  "Choisis l'action (webhook, notification Slack/Teams, attente…) et sa config.",
+                  "Active le workflow avec l'interrupteur — tu peux le désactiver à tout moment.",
                 ]}
               />
+            </Section>
+            <Separator />
+            <Section title="Étapes disponibles">
+              <p>
+                <b>Appeler un webhook</b> et <b>Notifier Slack/Teams</b> envoient un vrai POST HTTP
+                dès qu&apos;un contact est capturé. <b>Attendre</b> met le workflow en pause avant
+                l&apos;étape suivante. <b>Envoyer un email</b> et <b>Créer un contact CRM</b>{" "}
+                peuvent être ajoutées mais échoueront tant qu&apos;aucun fournisseur email ni
+                connexion CRM n&apos;est configuré — l&apos;échec apparaît clairement dans
+                l&apos;historique, rien n&apos;échoue silencieusement.
+              </p>
             </Section>
             <Separator />
             <Section title="Modèles d'email">
@@ -377,10 +389,13 @@ export default async function GuidePage() {
                 correctement.
               </p>
             </Section>
-            <Note>
-              L&apos;historique détaillé d&apos;exécution des workflows arrive avec le moteur de
-              workflow (Inngest ou Trigger.dev), pas encore choisi.
-            </Note>
+            <Separator />
+            <Section title="Historique des exécutions">
+              <p>
+                Chaque déclenchement de workflow est journalisé : succès ou échec, durée, et le
+                message d&apos;erreur exact en cas de problème.
+              </p>
+            </Section>
           </TabsContent>
 
           {/* Admin */}

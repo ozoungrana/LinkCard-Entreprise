@@ -1,17 +1,28 @@
-import { History, Lock, Mail, Webhook, Workflow as WorkflowIcon } from "lucide-react";
+import { CheckCircle2, History, Lock, Mail, Webhook, Workflow as WorkflowIcon, XCircle } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateWorkflowDialog } from "@/components/features/create-workflow-dialog";
 import { EmailTemplatesManager } from "@/components/features/email-templates-manager";
 import { WebhooksManager } from "@/components/features/webhooks-manager";
+import { WorkflowStepsSection } from "@/components/features/workflow-steps-section";
 import { WorkflowToggle } from "@/components/features/workflow-toggle";
 import {
   getCurrentOrganization,
   getEmailTemplates,
   getMyWorkflows,
   getWebhooks,
+  getWorkflowExecutions,
 } from "@/lib/supabase/queries";
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default async function AutomationsPage() {
   const organization = await getCurrentOrganization();
@@ -33,10 +44,11 @@ export default async function AutomationsPage() {
     );
   }
 
-  const [workflows, emailTemplates, webhooks] = await Promise.all([
+  const [workflows, emailTemplates, webhooks, executions] = await Promise.all([
     getMyWorkflows(),
     getEmailTemplates(),
     getWebhooks(),
+    getWorkflowExecutions(),
   ]);
 
   return (
@@ -81,17 +93,18 @@ export default async function AutomationsPage() {
             <p className="text-sm text-muted-foreground">Aucun workflow pour l&apos;instant.</p>
           ) : (
             workflows.map((wf) => (
-              <div key={wf.id} className="flex items-center gap-3 rounded-lg border p-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <WorkflowIcon className="size-4 text-muted-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium">{wf.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Déclencheur : {wf.trigger_type}
+              <div key={wf.id} className="flex flex-col gap-2 rounded-lg border p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <WorkflowIcon className="size-4 text-muted-foreground" />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">{wf.name}</div>
+                    <div className="text-xs text-muted-foreground">Déclencheur : Lead capturé</div>
+                  </div>
+                  <WorkflowToggle id={wf.id} isActive={wf.is_active} />
                 </div>
-                <WorkflowToggle id={wf.id} isActive={wf.is_active} />
+                <WorkflowStepsSection workflowId={wf.id} steps={wf.workflow_steps ?? []} />
               </div>
             ))
           )}
@@ -107,11 +120,40 @@ export default async function AutomationsPage() {
           <WebhooksManager webhooks={webhooks} />
         </TabsContent>
 
-        <TabsContent value="wf-history">
-          <p className="text-sm text-muted-foreground">
-            L&apos;historique d&apos;exécution arrive avec le moteur de workflow (Inngest ou
-            Trigger.dev — pas encore choisi).
-          </p>
+        <TabsContent value="wf-history" className="flex flex-col gap-2">
+          {executions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aucune exécution pour l&apos;instant. Un workflow actif se déclenche automatiquement
+              à chaque contact capturé.
+            </p>
+          ) : (
+            executions.map((exec) => (
+              <div key={exec.id} className="flex items-center gap-3 rounded-lg border p-3">
+                <div
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
+                    exec.status === "success" ? "bg-success/10" : "bg-danger/10"
+                  }`}
+                >
+                  {exec.status === "success" ? (
+                    <CheckCircle2 className="size-4 text-success" />
+                  ) : (
+                    <XCircle className="size-4 text-danger" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">{exec.workflow?.name ?? "Workflow supprimé"}</div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {exec.status === "failed" && exec.error_message
+                      ? exec.error_message
+                      : `${exec.duration_ms ?? 0} ms`}
+                  </div>
+                </div>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {formatDateTime(exec.created_at)}
+                </span>
+              </div>
+            ))
+          )}
         </TabsContent>
       </Card>
     </Tabs>
