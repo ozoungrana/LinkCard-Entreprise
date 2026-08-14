@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateWorkflowDialog } from "@/components/features/create-workflow-dialog";
 import { EmailTemplatesManager } from "@/components/features/email-templates-manager";
 import { WebhooksManager } from "@/components/features/webhooks-manager";
+import { WorkflowActions } from "@/components/features/workflow-actions";
 import { WorkflowStepsSection } from "@/components/features/workflow-steps-section";
 import { WorkflowToggle } from "@/components/features/workflow-toggle";
 import {
@@ -103,6 +104,7 @@ export default async function AutomationsPage() {
                     <div className="text-xs text-muted-foreground">Déclencheur : Lead capturé</div>
                   </div>
                   <WorkflowToggle id={wf.id} isActive={wf.is_active} />
+                  <WorkflowActions workflowId={wf.id} workflowName={wf.name} />
                 </div>
                 <WorkflowStepsSection workflowId={wf.id} steps={wf.workflow_steps ?? []} />
               </div>

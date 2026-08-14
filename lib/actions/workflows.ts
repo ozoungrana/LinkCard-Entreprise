@@ -48,6 +48,39 @@ export async function createWorkflow(name: string): Promise<WorkflowActionResult
   revalidatePath("/automations");
 }
 
+export async function renameWorkflow(workflowId: string, name: string): Promise<WorkflowActionResult> {
+  const organization = await getCurrentOrganization();
+  if (!organization) return { error: "Aucune organisation associée à ce compte." };
+
+  const trimmed = name.trim();
+  if (!trimmed) return { error: "Le nom est requis." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("workflows")
+    .update({ name: trimmed })
+    .eq("id", workflowId)
+    .eq("organization_id", organization.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/automations");
+}
+
+export async function deleteWorkflow(workflowId: string): Promise<WorkflowActionResult> {
+  const organization = await getCurrentOrganization();
+  if (!organization) return { error: "Aucune organisation associée à ce compte." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("workflows")
+    .delete()
+    .eq("id", workflowId)
+    .eq("organization_id", organization.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/automations");
+}
+
 export async function toggleWorkflow(workflowId: string, isActive: boolean): Promise<WorkflowActionResult> {
   const organization = await getCurrentOrganization();
   if (!organization) return { error: "Aucune organisation associée à ce compte." };

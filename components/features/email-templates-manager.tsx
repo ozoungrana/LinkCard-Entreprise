@@ -3,9 +3,24 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Mail, Plus, Trash2 } from "lucide-react";
+import { Mail, Pencil, Plus, Trash2 } from "lucide-react";
 
-import { createEmailTemplate, deleteEmailTemplate } from "@/lib/actions/email-templates";
+import {
+  createEmailTemplate,
+  deleteEmailTemplate,
+  updateEmailTemplate,
+} from "@/lib/actions/email-templates";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,49 +37,139 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { EmailTemplate } from "@/lib/supabase/types";
 
-export function EmailTemplatesManager({ templates }: { templates: EmailTemplate[] }) {
+function TemplateFormDialog({
+  template,
+  trigger,
+}: {
+  template?: EmailTemplate;
+  trigger: React.ReactNode;
+}) {
+  const isEdit = !!template;
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [name, setName] = useState(template?.name ?? "");
+  const [subject, setSubject] = useState(template?.subject ?? "");
+  const [body, setBody] = useState(template?.body ?? "");
   const [pending, startTransition] = useTransition();
-  const [busyId, setBusyId] = useState<string | null>(null);
   const router = useRouter();
 
   function reset() {
-    setName("");
-    setSubject("");
-    setBody("");
+    setName(template?.name ?? "");
+    setSubject(template?.subject ?? "");
+    setBody(template?.body ?? "");
   }
 
   function submit() {
     startTransition(async () => {
-      const result = await createEmailTemplate(name, subject, body);
+      const result = isEdit
+        ? await updateEmailTemplate(template.id, name, subject, body)
+        : await createEmailTemplate(name, subject, body);
       if (result?.error) {
         toast.error(result.error);
         return;
       }
-      toast.success("Modèle créé");
+      toast.success(isEdit ? "Modèle mis à jour" : "Modèle créé");
       setOpen(false);
-      reset();
+      if (!isEdit) reset();
       router.refresh();
     });
   }
 
-  function remove(id: string) {
-    setBusyId(id);
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) reset();
+      }}
+    >
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Modifier le modèle" : "Nouveau modèle d'email"}</DialogTitle>
+          <DialogDescription>
+            Les variables entre doubles accolades (ex. {"{{prenom}}"}) sont détectées
+            automatiquement dans le contenu.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <Field>
+            <FieldLabel htmlFor="tpl-name">Nom</FieldLabel>
+            <Input
+              id="tpl-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Relance J+3"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="tpl-subject">Objet</FieldLabel>
+            <Input
+              id="tpl-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Ravi de vous avoir rencontré, {{prenom}}"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="tpl-body">Contenu</FieldLabel>
+            <Textarea id="tpl-body" value={body} onChange={(e) => setBody(e.target.value)} rows={6} />
+          </Field>
+        </div>
+        <DialogFooter>
+          <Button
+            disabled={!name.trim() || !subject.trim() || !body.trim() || pending}
+            onClick={submit}
+          >
+            {pending ? "Enregistrement…" : isEdit ? "Enregistrer" : "Créer"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteTemplateButton({ template }: { template: EmailTemplate }) {
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function submit() {
     startTransition(async () => {
-      const result = await deleteEmailTemplate(id);
+      const result = await deleteEmailTemplate(template.id);
       if (result?.error) {
         toast.error(result.error);
-      } else {
-        toast.success("Modèle supprimé");
-        router.refresh();
+        return;
       }
-      setBusyId(null);
+      toast.success("Modèle supprimé");
+      router.refresh();
     });
   }
 
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="Supprimer le modèle">
+          <Trash2 className="text-danger" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer « {template.name} » ?</AlertDialogTitle>
+          <AlertDialogDescription>Cette action est définitive.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction asChild>
+            <Button variant="destructive" disabled={pending} onClick={submit}>
+              {pending ? "Suppression…" : "Supprimer définitivement"}
+            </Button>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+export function EmailTemplatesManager({ templates }: { templates: EmailTemplate[] }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
@@ -75,60 +180,14 @@ export function EmailTemplatesManager({ templates }: { templates: EmailTemplate[
             contenu pour insérer des données dynamiques.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
+        <TemplateFormDialog
+          trigger={
             <Button size="sm">
               <Plus />
               Nouveau modèle
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nouveau modèle d&apos;email</DialogTitle>
-              <DialogDescription>
-                Les variables entre doubles accolades (ex. {"{{prenom}}"}) sont détectées
-                automatiquement dans le contenu.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-4">
-              <Field>
-                <FieldLabel htmlFor="tpl-name">Nom</FieldLabel>
-                <Input
-                  id="tpl-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Relance J+3"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="tpl-subject">Objet</FieldLabel>
-                <Input
-                  id="tpl-subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Ravi de vous avoir rencontré, {{prenom}}"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="tpl-body">Contenu</FieldLabel>
-                <Textarea
-                  id="tpl-body"
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  rows={6}
-                />
-              </Field>
-            </div>
-            <DialogFooter>
-              <Button
-                disabled={!name.trim() || !subject.trim() || !body.trim() || pending}
-                onClick={submit}
-              >
-                {pending ? "Création…" : "Créer"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          }
+        />
       </div>
 
       {templates.length === 0 ? (
@@ -153,14 +212,15 @@ export function EmailTemplatesManager({ templates }: { templates: EmailTemplate[
                   </div>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={busyId === tpl.id}
-                onClick={() => remove(tpl.id)}
-              >
-                <Trash2 className="text-danger" />
-              </Button>
+              <TemplateFormDialog
+                template={tpl}
+                trigger={
+                  <Button variant="ghost" size="icon-sm" aria-label="Modifier le modèle">
+                    <Pencil />
+                  </Button>
+                }
+              />
+              <DeleteTemplateButton template={tpl} />
             </div>
           ))}
         </div>
