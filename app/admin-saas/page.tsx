@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, LayoutDashboard, ShieldAlert, Users } from "lucide-react";
+import { Building2, ExternalLink, LayoutDashboard, Network, ShieldAlert, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,23 @@ import {
   getAllUsers,
   getCurrentUser,
   getIsPlatformAdmin,
+  getNetworkProfiles,
   getPlatformStats,
 } from "@/lib/supabase/queries";
+import type { OrgPlan } from "@/lib/supabase/types";
+
+const planLabels: Record<OrgPlan, string> = {
+  free: "Free",
+  pro: "Pro",
+  business: "Business",
+  enterprise: "Enterprise",
+};
+
+const statusLabels: Record<string, string> = {
+  published: "Publiée",
+  draft: "Brouillon",
+  archived: "Archivée",
+};
 
 export default async function AdminSaasPage() {
   const [user, isPlatformAdmin] = await Promise.all([getCurrentUser(), getIsPlatformAdmin()]);
@@ -38,10 +53,11 @@ export default async function AdminSaasPage() {
     );
   }
 
-  const [stats, organizations, users] = await Promise.all([
+  const [stats, organizations, users, networkProfiles] = await Promise.all([
     getPlatformStats(),
     getAllOrganizations(),
     getAllUsers(),
+    getNetworkProfiles(),
   ]);
 
   const kpis = [
@@ -85,6 +101,10 @@ export default async function AdminSaasPage() {
               <TabsTrigger value="orgs" className="w-full justify-start px-3 py-2">
                 <Building2 />
                 Organisations
+              </TabsTrigger>
+              <TabsTrigger value="reseau" className="w-full justify-start px-3 py-2">
+                <Network />
+                Réseau LinkCard
               </TabsTrigger>
             </TabsList>
           </Card>
@@ -170,6 +190,91 @@ export default async function AdminSaasPage() {
                           <TableCell className="font-mono text-xs">{o.plan}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
                             {new Date(o.created_at).toLocaleDateString("fr-FR")}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reseau" className="flex flex-col gap-3">
+              <p className="text-xs text-muted-foreground">
+                {networkProfiles.length} carte{networkProfiles.length > 1 ? "s" : ""} appartenant à
+                une organisation avec un abonnement payant (Pro, Business ou Enterprise) — les
+                organisations en Free ne sont pas listées ici.
+              </p>
+              <Card className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Carte</TableHead>
+                      <TableHead>Propriétaire</TableHead>
+                      <TableHead>Organisation</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">Vues</TableHead>
+                      <TableHead className="text-right">Créée le</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {networkProfiles.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          Aucune carte parmi les organisations abonnées pour l&apos;instant.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      networkProfiles.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">
+                                {p.full_name ?? "Carte sans nom"}
+                              </span>
+                              {p.status === "published" && (
+                                <Link
+                                  href={`/c/${p.slug}`}
+                                  target="_blank"
+                                  className="text-muted-foreground hover:text-primary"
+                                  aria-label="Ouvrir la carte publique"
+                                >
+                                  <ExternalLink className="size-3.5" />
+                                </Link>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {[p.job_title, p.company].filter(Boolean).join(" · ") || "—"}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">{p.owner?.name ?? "—"}</div>
+                            <div className="text-xs text-muted-foreground">{p.owner?.email ?? "—"}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">{p.organization?.name ?? "—"}</div>
+                            {p.organization && (
+                              <Badge variant="secondary" className="mt-0.5 font-mono text-[10px]">
+                                {planLabels[p.organization.plan]}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`text-xs font-medium ${
+                                p.status === "published"
+                                  ? "text-success"
+                                  : p.status === "draft"
+                                    ? "text-warning"
+                                    : "text-muted-foreground"
+                              }`}
+                            >
+                              ● {statusLabels[p.status] ?? p.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs">{p.view_count}</TableCell>
+                          <TableCell className="text-right font-mono text-xs">
+                            {new Date(p.created_at).toLocaleDateString("fr-FR")}
                           </TableCell>
                         </TableRow>
                       ))

@@ -10,6 +10,7 @@ import type {
   LeadNote,
   Organization,
   OrganizationMember,
+  OrgPlan,
   Profile,
   ProfileVersion,
   SsoConnection,
@@ -395,6 +396,52 @@ export async function getAllUsers(): Promise<AppUser[]> {
     .order("created_at", { ascending: false })
     .limit(50);
   return (data as AppUser[]) ?? [];
+}
+
+export type NetworkProfile = Profile & {
+  organization: { id: string; name: string; plan: OrgPlan } | null;
+  owner: AppUser | null;
+  view_count: number;
+};
+
+// "Réseau LinkCard" (admin-saas) — every card belonging to an organization
+// with a valid (non-Free) plan, across all tenants. Free orgs are excluded
+// entirely rather than flagged: organizations.plan is already the single
+// source of truth for subscription validity (both the Stripe webhook and
+// the CinetPay expiration cron write 'free' back the moment a subscription
+// lapses), so filtering on it here needs no separate expiry check.
+export async function getNetworkProfiles(): Promise<NetworkProfile[]> {
+  const supabase = await createClient();
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("*, organizations(id, name, plan)")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  type ProfileWithOrg = Profile & { organizations: { id: string; name: string; plan: OrgPlan } | null };
+  const activeProfiles = ((profiles as ProfileWithOrg[] | null) ?? []).filter(
+    (p) => p.organizations && p.organizations.plan !== "free"
+  );
+  if (activeProfiles.length === 0) return [];
+
+  // profiles.owner_id references auth.users, not public.users, so there's
+  // no FK path PostgREST can embed across — join in JS instead (same
+  // reason as getOrganizationMembers above).
+  const ownerIds = Array.from(new Set(activeProfiles.map((p) => p.owner_id)));
+  const { data: owners } = await supabase.from("users").select("*").in("id", ownerIds);
+  const ownersById = new Map((owners ?? []).map((u) => [u.id, u as AppUser]));
+
+  const viewCounts = await getViewCountsByProfile(activeProfiles.map((p) => p.id));
+
+  return activeProfiles.map((p) => {
+    const { organizations, ...profile } = p;
+    return {
+      ...profile,
+      organization: organizations,
+      owner: ownersById.get(p.owner_id) ?? null,
+      view_count: viewCounts.get(p.id) ?? 0,
+    };
+  });
 }
 
 export async function getProfileVersions(profileId: string): Promise<ProfileVersion[]> {
