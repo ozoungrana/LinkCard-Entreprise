@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, Network } from "lucide-react";
 
 import {
   Sidebar,
@@ -35,7 +35,15 @@ function initialsOf(input: string) {
   );
 }
 
-export function AppSidebar({ user, plan }: { user: SidebarUser; plan: SidebarPlan }) {
+export function AppSidebar({
+  user,
+  plan,
+  isPlatformAdmin,
+}: {
+  user: SidebarUser;
+  plan: SidebarPlan;
+  isPlatformAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const seatsPct =
     plan?.seatsLimit && plan.seatsLimit > 0
@@ -82,6 +90,24 @@ export function AppSidebar({ user, plan }: { user: SidebarUser; plan: SidebarPla
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+
+        {isPlatformAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/admin-saas")} tooltip="Réseau LinkCard">
+                    <Link href="/admin-saas">
+                      <Network />
+                      <span>Réseau LinkCard</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
